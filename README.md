@@ -3,16 +3,43 @@
 Talent Sprint is a spec-driven coding assessment platform for evaluating and practicing Java,
 Python, C#, data structures, algorithms, and problem-solving skills.
 
+## Local Development
+
+```bash
+npm install
+npm run dev
+```
+
+Then open [http://localhost:3000](http://localhost:3000).
+
+Useful commands:
+
+```bash
+npm run lint
+npm run typecheck
+npm run build
+```
+
 ## Spec-Driven Workflow
 
-Specs live under `specs/` and should be reviewed before implementation begins.
+Specs live under `specs/` and should be reviewed before implementation changes become production
+work.
 
 - Product overview: `specs/talent-sprint/overview.md`
 - Feature specs: `specs/features/*/spec.md`
 - Branching strategy: `docs/branching-strategy.md`
 - Tech stack recommendation: `docs/tech-stack.md`
 
-## Initial Spec Branch
+## MVP Implementation
 
-The first branch contains the product overview and feature specifications only. Implementation should
-start from reviewed specs, with one feature branch per feature.
+The current implementation is a local-first MVP/prototype:
+
+- Public landing page with light/dark neon theme switcher
+- Candidate practice workspace
+- Timed assessment demo
+- Examiner reporting dashboard
+- Admin/question-library overview
+- Mock evaluation service for local testing
+
+Real email delivery, persistent database, authentication, and secure code execution are intentionally
+behind provider boundaries and will be plugged in after local workflows are validated.
