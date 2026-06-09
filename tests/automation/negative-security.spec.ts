@@ -13,6 +13,6 @@ test("assessment-only questions cannot be opened through the practice route", as
 test("basic reflected-script payloads stay escaped in client-rendered views", async ({ page }) => {
   await page.goto("/login?next=%3Cscript%3Ealert(1)%3C%2Fscript%3E");
 
-  await expect(page.getByRole("heading", { name: "Sign in to Talent Sprint." })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Log in or create a candidate account." })).toBeVisible();
   await expect(page.locator("script", { hasText: "alert(1)" })).toHaveCount(0);
 });

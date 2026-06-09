@@ -11,11 +11,52 @@ test("unauthenticated users are sent to the demo role selector before private pa
   await page.goto("/practice");
 
   await expect(page.getByRole("heading", { name: "Sign in required" })).toBeVisible();
-  await page.getByRole("link", { name: "Choose demo role" }).click();
+  await page.getByRole("link", { name: "Log in or register" }).click();
   await expect(page).toHaveURL("/login");
+  await expect(page.getByRole("heading", { name: "Log in or create a candidate account." })).toBeVisible();
+});
 
-  await page.getByRole("button", { name: "Continue as Candidate" }).click();
-  await expect(page.getByText("Signed in as Candidate Demo")).toBeVisible();
+test("candidate can register and lands on practice", async ({ page }) => {
+  const email = `candidate-${Date.now()}@example.com`;
+
+  await page.goto("/login");
+  await page.getByRole("button", { name: "Register" }).click();
+  await page.getByLabel("Full name").fill("New Candidate");
+  await page.getByLabel("Email").fill(email);
+  await page.getByLabel("Password", { exact: true }).fill("Password123!");
+  await page.getByLabel("Confirm password").fill("Password123!");
+  await page.getByRole("button", { name: "Create candidate account" }).click();
+
+  await expect(page).toHaveURL("/practice");
+  await expect(page.getByText("New Candidate")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Choose your next practice sprint." })).toBeVisible();
+});
+
+test("candidate login lands on practice", async ({ page }) => {
+  await page.goto("/login");
+  await page.getByLabel("Email").fill("candidate@talentsprint.dev");
+  await page.getByLabel("Password").fill("Password123!");
+  await page.locator("form").getByRole("button", { name: "Log in" }).click();
+
+  await expect(page).toHaveURL("/practice");
+  await expect(page.getByText("Candidate Demo")).toBeVisible();
+});
+
+test("examiner and administrator login land on their workspaces", async ({ page }) => {
+  await page.goto("/login");
+  await page.getByLabel("Email").fill("examiner@talentsprint.dev");
+  await page.getByLabel("Password").fill("Password123!");
+  await page.locator("form").getByRole("button", { name: "Log in" }).click();
+  await expect(page).toHaveURL("/examiner");
+  await expect(page.getByRole("heading", { name: "Create tests, send invites, and review outcomes." })).toBeVisible();
+
+  await page.getByRole("button", { name: "Sign out" }).click();
+  await page.goto("/login");
+  await page.getByLabel("Email").fill("admin@talentsprint.dev");
+  await page.getByLabel("Password").fill("Password123!");
+  await page.locator("form").getByRole("button", { name: "Log in" }).click();
+  await expect(page).toHaveURL("/admin");
+  await expect(page.getByRole("heading", { name: "Manage the question library and platform settings." })).toBeVisible();
 });
 
 test("candidate cannot access examiner or administrator surfaces", async ({ page }) => {

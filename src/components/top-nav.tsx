@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { LogOut, Moon, SunMedium, Trophy } from "lucide-react";
 import { useAuth } from "@/components/auth-provider";
 import { useTheme } from "@/components/theme-provider";
@@ -18,8 +18,13 @@ const navItems = [
 
 export function TopNav() {
   const pathname = usePathname();
+  const router = useRouter();
   const { theme, toggleTheme } = useTheme();
   const { user, signOut } = useAuth();
+  const handleSignOut = () => {
+    signOut();
+    router.push("/");
+  };
 
   return (
     <header className="top-nav">
@@ -47,7 +52,7 @@ export function TopNav() {
               {user.name}
               <small>{roleLabel(user.role)}</small>
             </span>
-            <button className="icon-button" onClick={signOut} aria-label="Sign out" type="button">
+            <button className="icon-button" onClick={handleSignOut} aria-label="Sign out" type="button">
               <LogOut size={18} />
             </button>
           </>

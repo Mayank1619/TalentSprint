@@ -24,7 +24,7 @@ export function AuthGate({
           <h1>Sign in required</h1>
           <p>{description}</p>
           <Link className="button primary" href="/login">
-            Choose demo role
+            Log in or register
           </Link>
         </section>
       </main>
@@ -42,7 +42,7 @@ export function AuthGate({
             {allowedRoles.map(roleLabel).join(" or ")} access.
           </p>
           <Link className="button secondary" href="/login">
-            Switch role
+            Log in with another account
           </Link>
         </section>
       </main>
