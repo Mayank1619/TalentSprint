@@ -7,7 +7,7 @@ async function signInAs(page: import("@playwright/test").Page, userId: string) {
   }, userId);
 }
 
-test("unauthenticated users are sent to the demo role selector before private pages", async ({ page }) => {
+test("unauthenticated users are sent to login before private pages", async ({ page }) => {
   await page.goto("/practice");
 
   await expect(page.getByRole("heading", { name: "Sign in required" })).toBeVisible();
@@ -40,6 +40,8 @@ test("candidate login lands on practice", async ({ page }) => {
 
   await expect(page).toHaveURL("/practice");
   await expect(page.getByText("Candidate Demo")).toBeVisible();
+  await expect(page.getByRole("navigation").getByRole("link", { name: "Admin" })).toHaveCount(0);
+  await expect(page.getByRole("navigation").getByRole("link", { name: "Examiner" })).toHaveCount(0);
 });
 
 test("examiner and administrator login land on their workspaces", async ({ page }) => {
@@ -49,6 +51,7 @@ test("examiner and administrator login land on their workspaces", async ({ page 
   await page.locator("form").getByRole("button", { name: "Log in" }).click();
   await expect(page).toHaveURL("/examiner");
   await expect(page.getByRole("heading", { name: "Create tests, send invites, and review outcomes." })).toBeVisible();
+  await expect(page.getByRole("navigation").getByRole("link", { name: "Admin" })).toHaveCount(0);
 
   await page.getByRole("button", { name: "Sign out" }).click();
   await page.goto("/login");
@@ -57,6 +60,7 @@ test("examiner and administrator login land on their workspaces", async ({ page 
   await page.locator("form").getByRole("button", { name: "Log in" }).click();
   await expect(page).toHaveURL("/admin");
   await expect(page.getByRole("heading", { name: "Manage the question library and platform settings." })).toBeVisible();
+  await expect(page.getByRole("navigation").getByRole("link", { name: "Admin" })).toBeVisible();
 });
 
 test("candidate cannot access examiner or administrator surfaces", async ({ page }) => {

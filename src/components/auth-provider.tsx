@@ -2,8 +2,10 @@
 
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import {
+  type AuthMode,
   authStorageKeys,
   normalizeEmail,
+  parseRole,
   roleHomePath,
   seededAccounts,
   validateRegistration,
@@ -11,6 +13,7 @@ import {
   type RegistrationInput,
   type StoredAccount,
 } from "@/lib/auth";
+import { getSupabaseClient, isSupabaseConfigured } from "@/lib/supabase-client";
 
 type AuthResult = {
   ok: boolean;
@@ -20,10 +23,11 @@ type AuthResult = {
 
 type AuthContextValue = {
   user: DemoUser | null;
+  authMode: AuthMode;
   accounts: StoredAccount[];
-  signIn: (email: string, password: string) => AuthResult;
-  registerCandidate: (input: RegistrationInput) => AuthResult;
-  signOut: () => void;
+  signIn: (email: string, password: string) => Promise<AuthResult>;
+  registerCandidate: (input: RegistrationInput) => Promise<AuthResult>;
+  signOut: () => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -31,8 +35,24 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<DemoUser | null>(null);
   const [accounts, setAccounts] = useState<StoredAccount[]>([]);
+  const authMode: AuthMode = isSupabaseConfigured() ? "supabase" : "local";
 
   useEffect(() => {
+    const supabase = getSupabaseClient();
+    if (supabase) {
+      supabase.auth.getSession().then(({ data }) => {
+        setUser(data.session?.user ? mapSupabaseUser(data.session.user) : null);
+      });
+
+      const {
+        data: { subscription },
+      } = supabase.auth.onAuthStateChange((_event, session) => {
+        setUser(session?.user ? mapSupabaseUser(session.user) : null);
+      });
+
+      return () => subscription.unsubscribe();
+    }
+
     window.requestAnimationFrame(() => {
       const nextAccounts = loadAccounts();
       const storedUserId = window.localStorage.getItem(authStorageKeys.user);
@@ -45,8 +65,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const value = useMemo(
     () => ({
       user,
+      authMode,
       accounts,
-      signIn: (email: string, password: string) => {
+      signIn: async (email: string, password: string) => {
+        const supabase = getSupabaseClient();
+        if (supabase) {
+          const { data, error } = await supabase.auth.signInWithPassword({
+            email: normalizeEmail(email),
+            password,
+          });
+
+          if (error || !data.user) {
+            return { ok: false, message: error?.message ?? "Email or password is incorrect." };
+          }
+
+          const nextUser = mapSupabaseUser(data.user);
+          setUser(nextUser);
+          return {
+            ok: true,
+            message: `Welcome back, ${nextUser.name}.`,
+            redirectTo: roleHomePath(nextUser.role),
+          };
+        }
+
         const nextAccounts = accounts.length > 0 ? accounts : loadAccounts();
         const nextUser =
           nextAccounts.find((item) => item.email === normalizeEmail(email) && item.password === password) ??
@@ -65,9 +106,38 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           redirectTo: roleHomePath(nextUser.role),
         };
       },
-      registerCandidate: (input: RegistrationInput) => {
+      registerCandidate: async (input: RegistrationInput) => {
         const validationMessage = validateRegistration(input);
         if (validationMessage) return { ok: false, message: validationMessage };
+
+        const supabase = getSupabaseClient();
+        if (supabase) {
+          const email = normalizeEmail(input.email);
+          const { data, error } = await supabase.auth.signUp({
+            email,
+            password: input.password,
+            options: {
+              data: {
+                name: input.name.trim(),
+                role: "candidate",
+              },
+            },
+          });
+
+          if (error || !data.user) {
+            return { ok: false, message: error?.message ?? "Unable to create account." };
+          }
+
+          const nextUser = mapSupabaseUser(data.user);
+          setUser(data.session ? nextUser : null);
+          return {
+            ok: true,
+            message: data.session
+              ? "Candidate account created."
+              : "Candidate account created. Check your email to confirm before logging in.",
+            redirectTo: data.session ? roleHomePath(nextUser.role) : undefined,
+          };
+        }
 
         const nextAccounts = accounts.length > 0 ? accounts : loadAccounts();
         const email = normalizeEmail(input.email);
@@ -95,12 +165,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           redirectTo: roleHomePath(nextUser.role),
         };
       },
-      signOut: () => {
+      signOut: async () => {
+        const supabase = getSupabaseClient();
+        if (supabase) {
+          await supabase.auth.signOut();
+        }
         window.localStorage.removeItem(authStorageKeys.user);
         setUser(null);
       },
     }),
-    [accounts, user],
+    [accounts, authMode, user],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
@@ -153,4 +227,22 @@ function isStoredAccount(value: StoredAccount) {
     typeof value.password === "string" &&
     typeof value.createdAt === "string"
   );
+}
+
+function mapSupabaseUser(value: {
+  id: string;
+  email?: string;
+  user_metadata?: Record<string, unknown>;
+}): DemoUser {
+  const metadata = value.user_metadata ?? {};
+  const role = parseRole(metadata.role);
+  const email = value.email ?? "";
+  const fallbackName = email ? email.split("@")[0] : "Talent Sprint User";
+
+  return {
+    id: value.id,
+    name: typeof metadata.name === "string" && metadata.name.trim() ? metadata.name : fallbackName,
+    email,
+    role,
+  };
 }

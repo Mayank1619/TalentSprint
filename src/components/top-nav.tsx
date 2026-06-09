@@ -5,15 +5,15 @@ import { usePathname, useRouter } from "next/navigation";
 import { LogOut, Moon, SunMedium, Trophy } from "lucide-react";
 import { useAuth } from "@/components/auth-provider";
 import { useTheme } from "@/components/theme-provider";
-import { roleLabel } from "@/lib/auth";
+import { canAccess, roleLabel, type Role } from "@/lib/auth";
 
-const navItems = [
+const navItems: Array<{ href: string; label: string; allowedRoles?: Role[] }> = [
   { href: "/", label: "Home" },
-  { href: "/practice", label: "Practice" },
-  { href: "/leaderboard", label: "Leaderboard" },
-  { href: "/assessment", label: "Assessment" },
-  { href: "/examiner", label: "Examiner" },
-  { href: "/admin", label: "Admin" },
+  { href: "/practice", label: "Practice", allowedRoles: ["candidate"] },
+  { href: "/leaderboard", label: "Leaderboard", allowedRoles: ["candidate", "administrator"] },
+  { href: "/assessment", label: "Assessment", allowedRoles: ["candidate"] },
+  { href: "/examiner", label: "Examiner", allowedRoles: ["examiner", "administrator"] },
+  { href: "/admin", label: "Admin", allowedRoles: ["administrator"] },
 ];
 
 export function TopNav() {
@@ -35,15 +35,17 @@ export function TopNav() {
         Talent Sprint
       </Link>
       <nav aria-label="Primary navigation">
-        {navItems.map((item) => (
-          <Link
-            className={pathname === item.href ? "active" : ""}
-            href={item.href}
-            key={item.href}
-          >
-            {item.label}
-          </Link>
-        ))}
+        {navItems
+          .filter((item) => !item.allowedRoles || canAccess(user?.role ?? null, item.allowedRoles))
+          .map((item) => (
+            <Link
+              className={pathname === item.href ? "active" : ""}
+              href={item.href}
+              key={item.href}
+            >
+              {item.label}
+            </Link>
+          ))}
       </nav>
       <div className="nav-actions">
         {user ? (

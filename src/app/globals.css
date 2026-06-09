@@ -356,6 +356,18 @@ input:focus-visible {
   margin-top: 0.35rem;
 }
 
+.inline-action {
+  display: inline-flex;
+  width: fit-content;
+  border: 0;
+  background: transparent;
+  color: var(--brand-primary);
+  cursor: pointer;
+  font-weight: 850;
+  margin-left: 0.6rem;
+  padding: 0;
+}
+
 .status-pill.warning,
 .submitted,
 .in-progress {

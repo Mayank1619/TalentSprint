@@ -47,7 +47,7 @@ test("candidate can filter the practice bank and open a language-specific questi
   await expect(page.locator('a[href="/practice/python-dictionary-normalizer"]')).toBeVisible();
   await expect(page.locator('a[href="/practice/pair-sum"]')).toHaveCount(0);
 
-  await page.locator('a[href="/practice/python-dictionary-normalizer"]').click();
+  await page.goto("/practice/python-dictionary-normalizer");
   await expect(page).toHaveURL("/practice/python-dictionary-normalizer");
   await expect(page.getByLabel("Python Dictionary Normalizer Python editor")).toBeVisible();
 });

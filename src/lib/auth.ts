@@ -12,6 +12,8 @@ export type StoredAccount = DemoUser & {
   createdAt: string;
 };
 
+export type AuthMode = "supabase" | "local";
+
 export type RegistrationInput = {
   name: string;
   email: string;
@@ -73,6 +75,12 @@ export function roleHomePath(role: Role) {
   };
 
   return paths[role];
+}
+
+export function parseRole(value: unknown): Role {
+  return value === "examiner" || value === "administrator" || value === "candidate"
+    ? value
+    : "candidate";
 }
 
 export function normalizeEmail(email: string) {

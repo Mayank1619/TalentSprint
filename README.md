@@ -30,6 +30,7 @@ work.
 - Branching strategy: `docs/branching-strategy.md`
 - Tech stack recommendation: `docs/tech-stack.md`
 - CI/CD quality gates: `docs/ci-cd.md`
+- Authentication and authorization: `docs/authentication.md`
 
 ## MVP Implementation
 

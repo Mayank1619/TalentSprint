@@ -3,19 +3,13 @@
 import { FormEvent, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { LockKeyhole, ShieldCheck, UserPlus, UserRoundCheck } from "lucide-react";
+import { LockKeyhole, ServerCog, UserPlus, UserRoundCheck } from "lucide-react";
 import { useAuth } from "@/components/auth-provider";
 import { roleHomePath, roleLabel } from "@/lib/auth";
 
-const reviewerAccounts = [
-  { email: "candidate@talentsprint.dev", role: "candidate" },
-  { email: "examiner@talentsprint.dev", role: "examiner" },
-  { email: "admin@talentsprint.dev", role: "administrator" },
-] as const;
-
 export default function LoginPage() {
   const router = useRouter();
-  const { user, signIn, registerCandidate } = useAuth();
+  const { authMode, user, signIn, signOut, registerCandidate } = useAuth();
   const [mode, setMode] = useState<"login" | "register">("login");
   const [message, setMessage] = useState<string | null>(null);
   const [loginEmail, setLoginEmail] = useState("");
@@ -25,18 +19,18 @@ export default function LoginPage() {
   const [registerPassword, setRegisterPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
 
-  function handleLogin(event: FormEvent<HTMLFormElement>) {
+  async function handleLogin(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const result = signIn(loginEmail, loginPassword);
+    const result = await signIn(loginEmail, loginPassword);
     setMessage(result.message);
     if (result.ok && result.redirectTo) {
       router.push(result.redirectTo);
     }
   }
 
-  function handleRegister(event: FormEvent<HTMLFormElement>) {
+  async function handleRegister(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const result = registerCandidate({
+    const result = await registerCandidate({
       name,
       email: registerEmail,
       password: registerPassword,
@@ -65,6 +59,9 @@ export default function LoginPage() {
           <Link className="inline-link" href={roleHomePath(user.role)}>
             Go to my workspace
           </Link>
+          <button className="inline-action" onClick={async () => signOut()} type="button">
+            Sign out
+          </button>
         </section>
       )}
 
@@ -101,7 +98,7 @@ export default function LoginPage() {
                   autoComplete="email"
                   name="email"
                   onChange={(event) => setLoginEmail(event.target.value)}
-                  placeholder="candidate@talentsprint.dev"
+                  placeholder="you@example.com"
                   required
                   type="email"
                   value={loginEmail}
@@ -182,36 +179,30 @@ export default function LoginPage() {
         </div>
 
         <aside className="system-card auth-helper">
-          <ShieldCheck />
-          <h2>Reviewer accounts</h2>
-          <p>Use these seeded accounts to test each role. Password for all reviewer accounts:</p>
-          <code>Password123!</code>
-          <div className="readiness-list">
-            {reviewerAccounts.map((account) => (
-              <button
-                key={account.email}
-                onClick={() => {
-                  setMode("login");
-                  setLoginEmail(account.email);
-                  setLoginPassword("Password123!");
-                  setMessage(`${roleLabel(account.role)} credentials filled.`);
-                }}
-                type="button"
-              >
-                {roleLabel(account.role)}
-                <small>{account.email}</small>
-              </button>
-            ))}
-          </div>
+          <ServerCog />
+          <h2>Authentication provider</h2>
+          {authMode === "supabase" ? (
+            <p>
+              Supabase Auth is active. Candidate registration creates a real auth user, and login
+              sessions are managed by Supabase.
+            </p>
+          ) : (
+            <>
+              <p>
+                Supabase environment variables are not configured in this deployment, so the app is
+                using local development auth for testing.
+              </p>
+              <p>Configure Supabase to turn this into production authentication.</p>
+            </>
+          )}
         </aside>
       </section>
 
       <section className="security-note">
         <LockKeyhole />
         <p>
-          This deployment uses browser-persisted prototype accounts until the free hosted database
-          and server-side auth provider are connected. Role guards and redirects are active in the
-          app flow.
+          Candidate registration assigns candidate access automatically. Examiner and administrator
+          roles should be granted in the auth provider by setting user metadata role values.
         </p>
       </section>
     </main>
