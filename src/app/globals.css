@@ -1159,6 +1159,11 @@ input:focus-visible {
   font-weight: 850;
 }
 
+.empty-state-row {
+  color: var(--text-secondary);
+  padding: 1.2rem;
+}
+
 .table-row:last-child {
   border-bottom: 0;
 }

@@ -20,7 +20,7 @@ Talent Sprint should use a Vercel-friendly full-stack TypeScript architecture:
 - **Validation**: Zod
 - **Email**: Resend
 - **Code editor**: Monaco Editor
-- **Code execution**: Judge0-compatible execution service behind an adapter
+- **Code execution**: External sandbox execution behind an adapter
 - **Testing**: Vitest, React Testing Library, Playwright
 - **Deployment**: Vercel for the Next.js application
 
@@ -44,7 +44,7 @@ Vercel, and uses free or open-source technology for the MVP.
 | Validation | Zod | Shared runtime validation for API inputs, forms, and service boundaries |
 | Email | Resend | Free transactional email tier, good developer experience |
 | Code editor | Monaco Editor | Mature browser editor experience for Java, Python, and C# |
-| Code execution | Judge0 adapter | Keeps untrusted code outside Vercel Functions and preserves future portability |
+| Code execution | External runner adapter | Keeps untrusted code outside Vercel Functions and preserves future portability |
 | Unit tests | Vitest | Fast TypeScript unit testing |
 | Component tests | React Testing Library | Tests UI behavior from the user's perspective |
 | E2E tests | Playwright | Verifies full candidate and examiner flows |
@@ -108,7 +108,7 @@ Recommended MVP architecture:
 ```text
 Next.js on Vercel
   -> Code Execution Adapter
-  -> Judge0-compatible execution service
+  -> Piston/Judge0-compatible execution service
   -> Result returned to Talent Sprint API
   -> Stored in Supabase Postgres
 ```
@@ -129,6 +129,8 @@ workspace or examiner reporting.
 
 | Option | Cost profile | Recommendation |
 | --- | --- | --- |
+| Judge0 CE public/self-hosted API | Free public endpoint or self-hosted | Current default MVP adapter for executable Python practice checks |
+| Piston self-hosted/whitelisted API | Free if self-hosted or approved for public API whitelist | Optional adapter; public execute endpoint is whitelist-only as of February 15, 2026 |
 | Local Judge0 Docker for development | Free locally | Use for local dev and test fixtures |
 | Self-hosted Judge0 Community Edition | Software is free, hosting may cost money | Best long-term control if we can host a small VM |
 | Judge0 Cloud or similar hosted judge API | May have free or trial limits, then paid | Useful for early MVP if self-hosting is not available |
@@ -324,12 +326,24 @@ vitest
 ## Open Decisions
 
 - Confirm whether Supabase Auth is acceptable or whether the organization prefers custom auth.
-- Confirm whether the execution provider will be self-hosted Judge0, hosted Judge0-compatible API, or
-  another sandbox provider.
+- Confirm whether the production execution provider will be self-hosted Piston, self-hosted Judge0,
+  hosted Judge0-compatible API, or another sandbox provider.
 - Confirm whether production must stay entirely free or whether free/open-source technology with
   low-cost hosting is acceptable for the execution service.
 - Confirm expected candidate volume for database, email, and execution sizing.
 - Confirm whether reports need file exports in MVP.
+
+## Current MVP Implementation Note
+
+The application now grades Python practice submissions for supported questions through a server-side
+Judge0-compatible sandbox adapter configured by `JUDGE0_API_URL`. Piston remains available for a
+self-hosted or whitelisted endpoint through `PISTON_API_URL`, but the public Piston execute API is no
+longer generally open. If the sandbox is unavailable, if a question has not yet been converted to
+executable fixtures, or if the selected language is Java/C#, the app falls back to deterministic
+local checks so candidates no longer receive random report data.
+
+Next execution work should normalize Java and C# starter signatures per question, then add Java and
+C# wrappers to the same adapter before relying on those languages for production-grade assessments.
 
 ## Decision Record
 

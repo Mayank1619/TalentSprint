@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { CheckCircle2, Clock3, Play, RotateCcw, Send, TimerReset } from "lucide-react";
+import { useAuth } from "@/components/auth-provider";
+import { saveAttempt } from "@/lib/attempt-store";
 import { evaluateCode, type EvaluationResult } from "@/lib/evaluator";
 import type { Language, Question } from "@/lib/mock-data";
 
@@ -29,12 +31,14 @@ export function CodeWorkspace({
   redirectOnSubmit = false,
   autoSubmitSeconds,
 }: CodeWorkspaceProps) {
+  const { user } = useAuth();
   const [language, setLanguage] = useState<Language>("Python");
   const [code, setCode] = useState(question.starterCode.Python);
   const [result, setResult] = useState<EvaluationResult | null>(null);
   const [submitted, setSubmitted] = useState(false);
   const [secondsLeft, setSecondsLeft] = useState(autoSubmitSeconds ?? null);
-  const submitRef = useRef<() => void>(() => {});
+  const startedAtRef = useRef(new Date().toISOString());
+  const submitRef = useRef<() => Promise<void>>(async () => {});
 
   const resultTone = useMemo(() => {
     if (!result) return "";
@@ -52,26 +56,74 @@ export function CodeWorkspace({
 
   const timerTone = secondsLeft !== null && secondsLeft <= 60 ? "warning" : "";
 
-  const submit = useCallback(() => {
-    const nextResult = evaluateCode(question, language, code, {
+  const evaluateCurrentCode = useCallback(async () => {
+    const options = {
       assessmentMode,
       durationSeconds,
       secondsRemaining,
-    });
+    };
+
+    try {
+      const response = await fetch("/api/evaluate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          questionId: question.id,
+          language,
+          code,
+          ...options,
+        }),
+      });
+      const payload = (await response.json()) as { ok?: boolean; result?: EvaluationResult };
+      if (response.ok && payload.ok && payload.result) return payload.result;
+    } catch {
+      // Local fallback keeps the app usable during offline development.
+    }
+
+    return evaluateCode(question, language, code, options);
+  }, [assessmentMode, code, durationSeconds, language, question, secondsRemaining]);
+
+  const submit = useCallback(async () => {
+    const nextResult = await evaluateCurrentCode();
+    const submittedAt = new Date().toISOString();
+    const timeTakenSeconds =
+      autoSubmitSeconds === undefined || secondsLeft === null
+        ? Math.max(0, Math.round((Date.parse(submittedAt) - Date.parse(startedAtRef.current)) / 1000))
+        : Math.max(0, autoSubmitSeconds - secondsLeft);
+
     setResult(nextResult);
     setSubmitted(true);
+    if (user) {
+      saveAttempt({
+        id: crypto.randomUUID(),
+        candidateId: user.id,
+        candidateName: user.name,
+        questionId: question.id,
+        questionTitle: question.title,
+        language,
+        code,
+        mode: assessmentMode ? "assessment" : "practice",
+        startedAt: startedAtRef.current,
+        submittedAt,
+        timeLimitSeconds: autoSubmitSeconds,
+        timeTakenSeconds,
+        result: nextResult,
+      });
+    }
     if (redirectOnSubmit) {
       window.location.assign(submissionHref);
     }
   }, [
     assessmentMode,
+    autoSubmitSeconds,
     code,
-    durationSeconds,
+    evaluateCurrentCode,
     language,
     question,
     redirectOnSubmit,
-    secondsRemaining,
+    secondsLeft,
     submissionHref,
+    user,
   ]);
 
   useEffect(() => {
@@ -105,8 +157,8 @@ export function CodeWorkspace({
     setSubmitted(false);
   }
 
-  function runSamples() {
-    setResult(evaluateCode(question, language, code));
+  async function runSamples() {
+    setResult(await evaluateCurrentCode());
   }
 
   return (

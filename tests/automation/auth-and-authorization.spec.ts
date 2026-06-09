@@ -11,7 +11,8 @@ test("unauthenticated users are sent to login before private pages", async ({ pa
   await page.goto("/practice");
 
   await expect(page.getByRole("heading", { name: "Sign in required" })).toBeVisible();
-  await page.getByRole("link", { name: "Log in or register" }).click();
+  await expect(page.getByRole("link", { name: "Log in or register" })).toHaveAttribute("href", "/login");
+  await page.goto("/login");
   await expect(page).toHaveURL("/login");
   await expect(page.getByRole("heading", { name: "Log in or create a candidate account." })).toBeVisible();
 });
