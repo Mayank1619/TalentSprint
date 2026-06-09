@@ -30,6 +30,41 @@ export type CandidateResult = {
   submittedAt: string | null;
 };
 
+export type ReportQuestion = {
+  questionId: string;
+  title: string;
+  language: Language;
+  score: number;
+  maxScore: number;
+  submittedCode: string;
+  visiblePassed: number;
+  visibleTotal: number;
+  hiddenPassed: number;
+  hiddenTotal: number;
+  outcomes: {
+    name: string;
+    visibility: "Visible" | "Hidden";
+    status: "Passed" | "Failed";
+    durationMs: number;
+  }[];
+};
+
+export type DetailedReport = {
+  candidateId: string;
+  candidateName: string;
+  candidateEmail: string;
+  examinerEmail: string;
+  assessmentTitle: string;
+  status: "Completed" | "Submitted" | "Grading pending";
+  score: number;
+  submittedAt: string;
+  durationUsed: string;
+  summary: string;
+  strengths: string[];
+  concerns: string[];
+  questions: ReportQuestion[];
+};
+
 export const skillAreas: SkillArea[] = [
   {
     title: "Java ability",
@@ -223,3 +258,86 @@ export const candidateResults: CandidateResult[] = [
     submittedAt: null,
   },
 ];
+
+export const detailedReports: DetailedReport[] = [
+  {
+    candidateId: "cand-001",
+    candidateName: "Aarav Mehta",
+    candidateEmail: "aarav@example.com",
+    examinerEmail: "examiner@talentsprint.dev",
+    assessmentTitle: "Consultant Core Coding Screen",
+    status: "Completed",
+    score: 86,
+    submittedAt: "2026-06-09 10:42",
+    durationUsed: "38m 12s",
+    summary:
+      "Strong algorithmic approach with clean Python code. Minor edge-case risk around invalid input handling.",
+    strengths: [
+      "Used a single-pass hash map solution for Pair Sum.",
+      "Kept code readable and direct under time pressure.",
+      "Passed all visible tests and most hidden tests.",
+    ],
+    concerns: [
+      "Could add stronger input validation.",
+      "Parentheses solution missed one nested edge case in hidden tests.",
+    ],
+    questions: [
+      {
+        questionId: "pair-sum",
+        title: "Pair Sum",
+        language: "Python",
+        score: 48,
+        maxScore: 50,
+        submittedCode: `def pair_sum(nums, target):
+    seen = {}
+    for index, value in enumerate(nums):
+        need = target - value
+        if need in seen:
+            return [seen[need], index]
+        seen[value] = index
+    return []`,
+        visiblePassed: 2,
+        visibleTotal: 2,
+        hiddenPassed: 7,
+        hiddenTotal: 8,
+        outcomes: [
+          { name: "Sample: basic pair", visibility: "Visible", status: "Passed", durationMs: 32 },
+          { name: "Sample: unordered pair", visibility: "Visible", status: "Passed", durationMs: 28 },
+          { name: "Hidden: duplicate values", visibility: "Hidden", status: "Passed", durationMs: 35 },
+          { name: "Hidden: negative numbers", visibility: "Hidden", status: "Passed", durationMs: 33 },
+        ],
+      },
+      {
+        questionId: "valid-parentheses",
+        title: "Valid Parentheses",
+        language: "Python",
+        score: 38,
+        maxScore: 50,
+        submittedCode: `def is_valid(text):
+    stack = []
+    pairs = {')': '(', ']': '[', '}': '{'}
+    for ch in text:
+        if ch in pairs.values():
+            stack.append(ch)
+        elif ch in pairs:
+            if not stack or stack.pop() != pairs[ch]:
+                return False
+    return len(stack) == 0`,
+        visiblePassed: 3,
+        visibleTotal: 3,
+        hiddenPassed: 4,
+        hiddenTotal: 6,
+        outcomes: [
+          { name: "Sample: all bracket types", visibility: "Visible", status: "Passed", durationMs: 19 },
+          { name: "Sample: crossed brackets", visibility: "Visible", status: "Passed", durationMs: 17 },
+          { name: "Hidden: long nested string", visibility: "Hidden", status: "Passed", durationMs: 22 },
+          { name: "Hidden: ignored characters", visibility: "Hidden", status: "Failed", durationMs: 18 },
+        ],
+      },
+    ],
+  },
+];
+
+export function getDetailedReport(candidateId: string) {
+  return detailedReports.find((report) => report.candidateId === candidateId) ?? detailedReports[0];
+}

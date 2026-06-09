@@ -43,3 +43,18 @@ The current implementation is a local-first MVP/prototype:
 
 Real email delivery, persistent database, authentication, and secure code execution are intentionally
 behind provider boundaries and will be plugged in after local workflows are validated.
+
+## Email Configuration
+
+Report and question-set emails use a Resend-compatible API route.
+
+Without environment variables, email actions run in mock mode and return a success message without
+sending real mail. To send real email, configure:
+
+```bash
+RESEND_API_KEY=your_resend_api_key
+RESEND_FROM_EMAIL="Talent Sprint <verified-sender@example.com>"
+```
+
+For the current prototype, candidate summary emails hide hidden-test details. Examiner report emails
+include submitted code and test outcomes, but not hidden-test definitions.

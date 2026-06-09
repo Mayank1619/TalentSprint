@@ -1,28 +1,30 @@
+import { AuthGate } from "@/components/auth-gate";
 import { Archive, Database, Eye, FilePlus2, Settings2 } from "lucide-react";
 import { questions } from "@/lib/mock-data";
 
 export default function AdminPage() {
   return (
-    <main className="page-shell">
-      <section className="page-heading">
-        <p className="eyebrow text-only">Admin and authoring</p>
-        <h1>Manage the question library and platform settings.</h1>
-        <p>
-          Admins approve examiner access, manage reusable question content, and keep assessment
-          snapshots reproducible.
-        </p>
-      </section>
+    <AuthGate allowedRoles={["administrator"]} description="Admin settings require administrator access.">
+      <main className="page-shell">
+        <section className="page-heading">
+          <p className="eyebrow text-only">Admin and authoring</p>
+          <h1>Manage the question library and platform settings.</h1>
+          <p>
+            Admins approve examiner access, manage reusable question content, and keep assessment
+            snapshots reproducible.
+          </p>
+        </section>
 
-      <section className="toolbar-band">
+        <section className="toolbar-band">
         <button className="button primary" type="button">
           <FilePlus2 size={18} /> New question
         </button>
         <button className="button secondary" type="button">
           <Settings2 size={18} /> Platform settings
         </button>
-      </section>
+        </section>
 
-      <section className="authoring-grid">
+        <section className="authoring-grid">
         <div className="table-card">
           <div className="table-heading">
             <h2>Question library</h2>
@@ -64,7 +66,8 @@ export default function AdminPage() {
             <span>Execution sandbox: pending provider</span>
           </div>
         </aside>
-      </section>
-    </main>
+        </section>
+      </main>
+    </AuthGate>
   );
 }

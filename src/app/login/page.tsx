@@ -1,47 +1,53 @@
-import Link from "next/link";
-import { LockKeyhole, Shield, UserRoundCog, UserRoundCheck } from "lucide-react";
+"use client";
 
-const roles = [
-  {
-    title: "Candidate",
-    icon: UserRoundCheck,
-    body: "Practice questions, open invitations, complete timed assessments, and review score summaries.",
-  },
-  {
-    title: "Examiner",
-    icon: UserRoundCog,
-    body: "Create tests, send candidate invitations, review attempts, and inspect detailed results.",
-  },
-  {
-    title: "Administrator",
-    icon: Shield,
-    body: "Manage examiner access, platform settings, and question-library governance.",
-  },
-];
+import { LockKeyhole, Shield, UserRoundCog, UserRoundCheck } from "lucide-react";
+import { useAuth } from "@/components/auth-provider";
+import { demoUsers, roleLabel } from "@/lib/auth";
+
+const roleIcons = {
+  candidate: UserRoundCheck,
+  examiner: UserRoundCog,
+  administrator: Shield,
+};
+
+const roleDescriptions = {
+  candidate:
+    "Practice questions, open invitations, complete timed assessments, and review score summaries.",
+  examiner: "Create tests, send candidate invitations, review attempts, and inspect detailed results.",
+  administrator: "Manage examiner access, platform settings, and question-library governance.",
+};
 
 export default function LoginPage() {
+  const { user, signIn } = useAuth();
+
   return (
     <main className="page-shell auth-page">
       <section className="page-heading compact">
         <p className="eyebrow text-only">Access</p>
         <h1>Sign in to Talent Sprint.</h1>
         <p>
-          This prototype shows the role split. Supabase Auth will replace the mock entry points when
-          credentials are configured.
+          This prototype uses demo roles with client-side authorization. Supabase Auth will replace
+          these entry points when credentials are configured.
         </p>
       </section>
 
+      {user && (
+        <section className="signed-in-banner">
+          Signed in as <strong>{user.name}</strong> with {roleLabel(user.role)} access.
+        </section>
+      )}
+
       <section className="auth-grid">
-        {roles.map((role) => {
-          const Icon = role.icon;
+        {demoUsers.map((demoUser) => {
+          const Icon = roleIcons[demoUser.role];
           return (
-            <article key={role.title}>
+            <article key={demoUser.id}>
               <Icon size={28} />
-              <h2>{role.title}</h2>
-              <p>{role.body}</p>
-              <Link className="button secondary" href={role.title === "Candidate" ? "/practice" : "/examiner"}>
-                Continue as {role.title}
-              </Link>
+              <h2>{roleLabel(demoUser.role)}</h2>
+              <p>{roleDescriptions[demoUser.role]}</p>
+              <button className="button secondary" onClick={() => signIn(demoUser.id)} type="button">
+                Continue as {roleLabel(demoUser.role)}
+              </button>
             </article>
           );
         })}

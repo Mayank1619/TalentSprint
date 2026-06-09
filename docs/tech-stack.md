@@ -224,8 +224,11 @@ Use Resend for transactional email:
 - Candidate score summary
 - Examiner result-ready notification
 - Password reset and verification if not fully handled by Supabase Auth templates
+- Question-set review emails for examiners
 
 Email sending should be wrapped behind an internal service interface so the provider can be replaced.
+The MVP implementation runs in mock email mode when `RESEND_API_KEY` is not configured and sends via
+Resend when that key is present.
 
 ## UI and Theme Plan
 
@@ -344,4 +347,3 @@ Vitest + Playwright for verification
 
 This gives Talent Sprint a practical free-first stack while preserving the ability to scale or swap
 providers later.
-

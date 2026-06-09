@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { BarChart3, Mail, PlusCircle, ShieldCheck, UsersRound } from "lucide-react";
+import { AuthGate } from "@/components/auth-gate";
 import { candidateResults, questions } from "@/lib/mock-data";
 
 export default function ExaminerPage() {
@@ -11,17 +12,21 @@ export default function ExaminerPage() {
     candidateResults.filter((candidate) => candidate.score !== null).length;
 
   return (
-    <main className="page-shell">
-      <section className="page-heading">
-        <p className="eyebrow text-only">Examiner console</p>
-        <h1>Create tests, send invites, and review outcomes.</h1>
-        <p>
-          This MVP view models the examiner workflow before persistent database, email, and sandbox
-          execution are connected.
-        </p>
-      </section>
+    <AuthGate
+      allowedRoles={["examiner", "administrator"]}
+      description="Examiner reporting requires examiner or administrator access."
+    >
+      <main className="page-shell">
+        <section className="page-heading">
+          <p className="eyebrow text-only">Examiner console</p>
+          <h1>Create tests, send invites, and review outcomes.</h1>
+          <p>
+            This MVP view models the examiner workflow before persistent database, email, and sandbox
+            execution are connected.
+          </p>
+        </section>
 
-      <section className="stat-grid">
+        <section className="stat-grid">
         <article>
           <UsersRound />
           <span>{candidateResults.length}</span>
@@ -42,18 +47,18 @@ export default function ExaminerPage() {
           <span>{questions.length}</span>
           <p>Question library items</p>
         </article>
-      </section>
+        </section>
 
-      <section className="toolbar-band">
-        <Link className="button primary" href="/admin">
+        <section className="toolbar-band">
+          <Link className="button primary" href="/admin">
           <PlusCircle size={18} /> Build assessment
-        </Link>
-        <button className="button secondary" type="button">
-          <Mail size={18} /> Send invites
-        </button>
-      </section>
+          </Link>
+          <Link className="button secondary" href="/examiner/reports/cand-001">
+            <Mail size={18} /> Open detailed report
+          </Link>
+        </section>
 
-      <section className="table-card">
+        <section className="table-card">
         <div className="table-heading">
           <h2>Candidate results</h2>
           <span>Role-gated detailed attempt review</span>
@@ -77,11 +82,19 @@ export default function ExaminerPage() {
               </span>
               <span>{candidate.language ?? "-"}</span>
               <span>{candidate.score === null ? "-" : `${candidate.score}%`}</span>
-              <span>{candidate.submittedAt ?? "-"}</span>
+              <span>
+                {candidate.submittedAt ?? "-"}
+                {candidate.status === "Completed" && (
+                  <Link className="inline-link" href={`/examiner/reports/${candidate.id}`}>
+                    Report
+                  </Link>
+                )}
+              </span>
             </div>
           ))}
         </div>
-      </section>
-    </main>
+        </section>
+      </main>
+    </AuthGate>
   );
 }

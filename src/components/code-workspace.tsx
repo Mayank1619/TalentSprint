@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Link from "next/link";
 import { CheckCircle2, Play, RotateCcw, Send, TimerReset } from "lucide-react";
 import { evaluateCode, type EvaluationResult } from "@/lib/evaluator";
 import type { Language, Question } from "@/lib/mock-data";
@@ -123,6 +124,11 @@ export function CodeWorkspace({ question, assessmentMode = false }: CodeWorkspac
                 Final submission locked. Candidate report shows the score summary; examiner view
                 sees detailed outcomes.
               </strong>
+            )}
+            {submitted && (
+              <Link className="inline-link" href="/candidate/report">
+                Open candidate report summary
+              </Link>
             )}
           </div>
         )}

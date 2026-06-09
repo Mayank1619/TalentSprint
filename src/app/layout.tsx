@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { AuthProvider } from "@/components/auth-provider";
 import { ThemeProvider } from "@/components/theme-provider";
 import { TopNav } from "@/components/top-nav";
 import "./globals.css";
@@ -33,8 +34,10 @@ export default function RootLayout({
     >
       <body className="min-h-full">
         <ThemeProvider>
-          <TopNav />
-          {children}
+          <AuthProvider>
+            <TopNav />
+            {children}
+          </AuthProvider>
         </ThemeProvider>
       </body>
     </html>
