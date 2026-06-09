@@ -127,8 +127,97 @@ jobs:
       - name: Analyze
         uses: github/codeql-action/analyze@v4
 
+  semgrep_sast:
+    name: 3c. Semgrep SAST
+    runs-on: ubuntu-latest
+    needs: automation_tests
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Semgrep Community Edition
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install semgrep
+
+      - name: Run Semgrep security rules
+        run: >
+          semgrep scan
+          --config p/default
+          --config p/javascript
+          --config p/typescript
+          --error
+          --exclude node_modules
+          --exclude .next
+          --exclude playwright-report
+          --exclude test-results
+
+  secret_scan:
+    name: 3d. Secret Scan
+    runs-on: ubuntu-latest
+    needs: automation_tests
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run Gitleaks
+        run: >
+          docker run --rm
+          -v "${{ github.workspace }}:/repo"
+          ghcr.io/gitleaks/gitleaks:latest
+          git --no-banner --redact --verbose /repo
+
+  zap_baseline:
+    name: 3e. OWASP ZAP Baseline
+    runs-on: ubuntu-latest
+    needs: automation_tests
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build production app
+        run: npm run build
+
+      - name: Start production app for ZAP
+        run: npm run start -- --hostname 0.0.0.0 --port 3101 > next-zap.log 2>&1 &
+
+      - name: Wait for production app
+        run: |
+          for attempt in {1..45}; do
+            if curl -fsS http://127.0.0.1:3101 >/dev/null; then
+              exit 0
+            fi
+            sleep 2
+          done
+          cat next-zap.log
+          exit 1
+
+      - name: Run ZAP baseline scan
+        uses: zaproxy/action-baseline@v0.15.0
+        with:
+          target: "http://127.0.0.1:3101"
+          fail_action: true
+          allow_issue_writing: false
+          cmd_options: "-a -m 2"
+
   sonarqube_quality_gate:
-    name: 3c. SonarQube Quality Gate
+    name: 3f. SonarQube Quality Gate
     runs-on: ubuntu-latest
     needs: automation_tests
     if: ${{ vars.SONAR_ENABLED == 'true' }}
@@ -164,8 +253,11 @@ jobs:
     needs:
       - dependency_audit
       - codeql_analysis
+      - semgrep_sast
+      - secret_scan
+      - zap_baseline
       - sonarqube_quality_gate
-    if: ${{ always() && needs.dependency_audit.result == 'success' && needs.codeql_analysis.result == 'success' && (needs.sonarqube_quality_gate.result == 'success' || needs.sonarqube_quality_gate.result == 'skipped') && github.event_name == 'push' }}
+    if: ${{ always() && needs.dependency_audit.result == 'success' && needs.codeql_analysis.result == 'success' && needs.semgrep_sast.result == 'success' && needs.secret_scan.result == 'success' && needs.zap_baseline.result == 'success' && (needs.sonarqube_quality_gate.result == 'success' || needs.sonarqube_quality_gate.result == 'skipped') && github.event_name == 'push' }}
     env:
       VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
       VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}

@@ -604,6 +604,10 @@ export const questions: Question[] = [
 export const practiceQuestions = questions.filter((question) => question.visibility !== "assessment");
 export const assessmentQuestions = questions.filter((question) => question.visibility !== "practice");
 
+export function getPracticeQuestion(questionId: string) {
+  return practiceQuestions.find((question) => question.id === questionId);
+}
+
 export const assessment = {
   title: "Consultant Core Coding Screen",
   durationMinutes: 45,

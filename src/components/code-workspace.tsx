@@ -11,6 +11,9 @@ type CodeWorkspaceProps = {
   assessmentMode?: boolean;
   durationSeconds?: number;
   secondsRemaining?: number;
+  submissionHref?: string;
+  submissionLinkLabel?: string;
+  redirectOnSubmit?: boolean;
 };
 
 const languages: Language[] = ["Python", "Java", "C#"];
@@ -20,6 +23,9 @@ export function CodeWorkspace({
   assessmentMode = false,
   durationSeconds,
   secondsRemaining,
+  submissionHref = "/candidate/report",
+  submissionLinkLabel = "Open candidate report summary",
+  redirectOnSubmit = false,
 }: CodeWorkspaceProps) {
   const [language, setLanguage] = useState<Language>("Python");
   const [code, setCode] = useState(question.starterCode.Python);
@@ -50,6 +56,9 @@ export function CodeWorkspace({
     });
     setResult(nextResult);
     setSubmitted(true);
+    if (redirectOnSubmit) {
+      window.location.assign(submissionHref);
+    }
   }
 
   return (
@@ -138,13 +147,13 @@ export function CodeWorkspace({
             ))}
             {submitted && (
               <strong>
-                Final submission locked. Candidate report shows the score summary; examiner view
-                sees detailed outcomes.
+                Final submission locked. Candidate report shows the score summary; examiner view sees
+                detailed outcomes.
               </strong>
             )}
             {submitted && (
-              <Link className="inline-link" href="/candidate/report">
-                Open candidate report summary
+              <Link className="inline-link" href={submissionHref}>
+                {submissionLinkLabel}
               </Link>
             )}
           </div>
