@@ -29,6 +29,7 @@ work.
 - Feature specs: `specs/features/*/spec.md`
 - Branching strategy: `docs/branching-strategy.md`
 - Tech stack recommendation: `docs/tech-stack.md`
+- CI/CD quality gates: `docs/ci-cd.md`
 
 ## MVP Implementation
 
