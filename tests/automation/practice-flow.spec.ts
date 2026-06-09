@@ -51,3 +51,16 @@ test("candidate can filter the practice bank and open a language-specific questi
   await expect(page).toHaveURL("/practice/python-dictionary-normalizer");
   await expect(page.getByLabel("Python Dictionary Normalizer Python editor")).toBeVisible();
 });
+
+test("practice timer counts down and auto-submits when time expires", async ({ page }) => {
+  await page.clock.install();
+
+  await page.goto("/practice/pair-sum");
+  await expect(page.getByText("18:00 remaining")).toBeVisible();
+
+  await page.clock.fastForward(18 * 60 * 1000);
+
+  await expect(page).toHaveURL("/practice/pair-sum/report");
+  await expect(page.getByText("Practice report")).toBeVisible();
+  await expect(page.getByText("Practice score")).toBeVisible();
+});

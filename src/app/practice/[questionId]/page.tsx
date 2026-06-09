@@ -54,6 +54,7 @@ export default async function PracticeSolvePage({
         </section>
 
         <CodeWorkspace
+          autoSubmitSeconds={question.estimatedMinutes * 60}
           key={question.id}
           question={question}
           redirectOnSubmit

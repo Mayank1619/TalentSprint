@@ -1,8 +1,8 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { CheckCircle2, Play, RotateCcw, Send, TimerReset } from "lucide-react";
+import { CheckCircle2, Clock3, Play, RotateCcw, Send, TimerReset } from "lucide-react";
 import { evaluateCode, type EvaluationResult } from "@/lib/evaluator";
 import type { Language, Question } from "@/lib/mock-data";
 
@@ -14,6 +14,7 @@ type CodeWorkspaceProps = {
   submissionHref?: string;
   submissionLinkLabel?: string;
   redirectOnSubmit?: boolean;
+  autoSubmitSeconds?: number;
 };
 
 const languages: Language[] = ["Python", "Java", "C#"];
@@ -26,29 +27,32 @@ export function CodeWorkspace({
   submissionHref = "/candidate/report",
   submissionLinkLabel = "Open candidate report summary",
   redirectOnSubmit = false,
+  autoSubmitSeconds,
 }: CodeWorkspaceProps) {
   const [language, setLanguage] = useState<Language>("Python");
   const [code, setCode] = useState(question.starterCode.Python);
   const [result, setResult] = useState<EvaluationResult | null>(null);
   const [submitted, setSubmitted] = useState(false);
+  const [secondsLeft, setSecondsLeft] = useState(autoSubmitSeconds ?? null);
+  const submitRef = useRef<() => void>(() => {});
 
   const resultTone = useMemo(() => {
     if (!result) return "";
     return result.status === "passed" ? "success" : result.status === "partial" ? "warning" : "error";
   }, [result]);
 
-  function handleLanguageChange(next: Language) {
-    setLanguage(next);
-    setCode(question.starterCode[next]);
-    setResult(null);
-    setSubmitted(false);
-  }
+  const timerLabel = useMemo(() => {
+    if (secondsLeft === null) return null;
+    const minutes = Math.floor(secondsLeft / 60)
+      .toString()
+      .padStart(2, "0");
+    const seconds = (secondsLeft % 60).toString().padStart(2, "0");
+    return `${minutes}:${seconds}`;
+  }, [secondsLeft]);
 
-  function runSamples() {
-    setResult(evaluateCode(question, language, code));
-  }
+  const timerTone = secondsLeft !== null && secondsLeft <= 60 ? "warning" : "";
 
-  function submit() {
+  const submit = useCallback(() => {
     const nextResult = evaluateCode(question, language, code, {
       assessmentMode,
       durationSeconds,
@@ -59,6 +63,50 @@ export function CodeWorkspace({
     if (redirectOnSubmit) {
       window.location.assign(submissionHref);
     }
+  }, [
+    assessmentMode,
+    code,
+    durationSeconds,
+    language,
+    question,
+    redirectOnSubmit,
+    secondsRemaining,
+    submissionHref,
+  ]);
+
+  useEffect(() => {
+    submitRef.current = submit;
+  }, [submit]);
+
+  useEffect(() => {
+    if (autoSubmitSeconds === undefined || submitted) return;
+
+    const deadlineMs = Date.now() + autoSubmitSeconds * 1000;
+
+    const timer = window.setInterval(() => {
+      setSecondsLeft(Math.max(0, Math.ceil((deadlineMs - Date.now()) / 1000)));
+    }, 1000);
+
+    const autoSubmit = window.setTimeout(() => {
+      setSecondsLeft(0);
+      submitRef.current();
+    }, autoSubmitSeconds * 1000);
+
+    return () => {
+      window.clearInterval(timer);
+      window.clearTimeout(autoSubmit);
+    };
+  }, [autoSubmitSeconds, question.id, submitted]);
+
+  function handleLanguageChange(next: Language) {
+    setLanguage(next);
+    setCode(question.starterCode[next]);
+    setResult(null);
+    setSubmitted(false);
+  }
+
+  function runSamples() {
+    setResult(evaluateCode(question, language, code));
   }
 
   return (
@@ -99,6 +147,11 @@ export function CodeWorkspace({
           {assessmentMode && (
             <span className="status-pill">
               <TimerReset size={14} /> Autosaved
+            </span>
+          )}
+          {timerLabel && (
+            <span className={`status-pill ${timerTone}`} aria-live="polite">
+              <Clock3 size={14} /> {timerLabel} remaining
             </span>
           )}
         </div>
