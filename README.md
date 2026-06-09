@@ -10,9 +10,9 @@ Specs live under `specs/` and should be reviewed before implementation begins.
 - Product overview: `specs/talent-sprint/overview.md`
 - Feature specs: `specs/features/*/spec.md`
 - Branching strategy: `docs/branching-strategy.md`
+- Tech stack recommendation: `docs/tech-stack.md`
 
 ## Initial Spec Branch
 
 The first branch contains the product overview and feature specifications only. Implementation should
 start from reviewed specs, with one feature branch per feature.
-

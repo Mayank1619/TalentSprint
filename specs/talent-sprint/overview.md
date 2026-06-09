@@ -91,6 +91,27 @@ The MVP does not need to support:
 
 ---
 
+## Recommended Tech Stack
+
+The current MVP technology recommendation is documented in `docs/tech-stack.md`.
+
+Summary:
+
+- Next.js, React, and TypeScript deployed on Vercel.
+- Supabase Postgres and Supabase Auth for database and authentication.
+- Drizzle ORM for schema and database access.
+- Resend for transactional email.
+- Monaco Editor for browser coding.
+- Judge0-compatible external execution adapter for Java, Python, and C# code execution.
+- Tailwind CSS and semantic design tokens for light mode and dark neon mode.
+- Vitest and Playwright for automated verification.
+
+The code execution engine is intentionally external to Vercel Functions because candidate-submitted
+code requires sandboxing, runtime isolation, and resource controls that should not be handled inside
+the main application runtime.
+
+---
+
 ## Cross-Feature Requirements
 
 ### Functional Requirements
