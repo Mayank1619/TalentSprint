@@ -61,7 +61,7 @@ export function AssessmentExperience() {
         <div>
           <Clock3 size={18} />
           <strong>{time}</strong>
-          <span>remaining</span>
+          <span>remaining · up to +10% speed bonus</span>
         </div>
         <div className="segmented">
           {assessment.questions.map((question, index) => (
@@ -81,7 +81,12 @@ export function AssessmentExperience() {
           </span>
         )}
       </section>
-      <CodeWorkspace assessmentMode question={assessment.questions[questionIndex]} />
+      <CodeWorkspace
+        assessmentMode
+        durationSeconds={durationSeconds}
+        question={assessment.questions[questionIndex]}
+        secondsRemaining={secondsLeft}
+      />
     </>
   );
 }

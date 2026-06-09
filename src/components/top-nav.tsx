@@ -10,6 +10,7 @@ import { roleLabel } from "@/lib/auth";
 const navItems = [
   { href: "/", label: "Home" },
   { href: "/practice", label: "Practice" },
+  { href: "/leaderboard", label: "Leaderboard" },
   { href: "/assessment", label: "Assessment" },
   { href: "/examiner", label: "Examiner" },
   { href: "/admin", label: "Admin" },

@@ -36,7 +36,10 @@ The current implementation is a local-first MVP/prototype:
 
 - Public landing page with light/dark neon theme switcher
 - Candidate practice workspace
+- Practice leaderboard
 - Timed assessment demo
+- Large seeded question bank with practice-only, assessment-only, and shared questions
+- Time-aware assessment scoring
 - Examiner reporting dashboard
 - Admin/question-library overview
 - Mock evaluation service for local testing

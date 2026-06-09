@@ -9,11 +9,18 @@ import type { Language, Question } from "@/lib/mock-data";
 type CodeWorkspaceProps = {
   question: Question;
   assessmentMode?: boolean;
+  durationSeconds?: number;
+  secondsRemaining?: number;
 };
 
 const languages: Language[] = ["Python", "Java", "C#"];
 
-export function CodeWorkspace({ question, assessmentMode = false }: CodeWorkspaceProps) {
+export function CodeWorkspace({
+  question,
+  assessmentMode = false,
+  durationSeconds,
+  secondsRemaining,
+}: CodeWorkspaceProps) {
   const [language, setLanguage] = useState<Language>("Python");
   const [code, setCode] = useState(question.starterCode.Python);
   const [result, setResult] = useState<EvaluationResult | null>(null);
@@ -36,7 +43,11 @@ export function CodeWorkspace({ question, assessmentMode = false }: CodeWorkspac
   }
 
   function submit() {
-    const nextResult = evaluateCode(question, language, code);
+    const nextResult = evaluateCode(question, language, code, {
+      assessmentMode,
+      durationSeconds,
+      secondsRemaining,
+    });
     setResult(nextResult);
     setSubmitted(true);
   }
@@ -116,6 +127,12 @@ export function CodeWorkspace({ question, assessmentMode = false }: CodeWorkspac
               <CheckCircle2 size={18} />
               {result.passed}/{result.total} samples passed · {result.score}%
             </h2>
+            {submitted && assessmentMode && (
+              <p>
+                Correctness {result.correctnessScore}% · Speed bonus +{result.timeBonus}% · Time
+                taken {result.timeTakenLabel}
+              </p>
+            )}
             {result.feedback.map((line) => (
               <p key={line}>{line}</p>
             ))}

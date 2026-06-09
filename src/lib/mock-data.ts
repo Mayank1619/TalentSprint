@@ -1,4 +1,5 @@
 export type Language = "Java" | "Python" | "C#";
+export type QuestionVisibility = "practice" | "assessment" | "both";
 
 export type SkillArea = {
   title: string;
@@ -13,10 +14,25 @@ export type Question = {
   difficulty: "Easy" | "Medium" | "Hard";
   category: string;
   tags: string[];
+  visibility: QuestionVisibility;
+  estimatedMinutes: number;
+  points: number;
   prompt: string;
   starterCode: Record<Language, string>;
   sampleTests: string[];
   hiddenTests: number;
+};
+
+export type PracticeLeaderboardEntry = {
+  rank: number;
+  candidateName: string;
+  primaryLanguage: Language;
+  solved: number;
+  attempts: number;
+  averageScore: number;
+  fastestSolve: string;
+  streakDays: number;
+  badge: string;
 };
 
 export type CandidateResult = {
@@ -110,111 +126,558 @@ export const skillAreas: SkillArea[] = [
   },
 ];
 
-export const questions: Question[] = [
-  {
+const seedQuestions: Question[] = [
+  makeQuestion({
     id: "pair-sum",
     title: "Pair Sum",
     difficulty: "Medium",
     category: "Algorithms",
     tags: ["Arrays", "Hash Map", "Single pass"],
+    visibility: "both",
+    estimatedMinutes: 18,
+    points: 50,
     prompt:
       "Given an array of integers and a target, return the indices of two values that add up to the target. Assume exactly one answer exists.",
-    starterCode: {
-      Java: `import java.util.*;
-
-class Solution {
-  public int[] pairSum(int[] nums, int target) {
-    // Write your solution here.
-    return new int[] {};
-  }
-}`,
-      Python: `def pair_sum(nums, target):
-    # Write your solution here.
-    return []`,
-      "C#": `using System.Collections.Generic;
-
-public class Solution {
-  public int[] PairSum(int[] nums, int target) {
-    // Write your solution here.
-    return new int[] {};
-  }
-}`,
-    },
     sampleTests: ["nums=[2,7,11,15], target=9 -> [0,1]", "nums=[3,2,4], target=6 -> [1,2]"],
     hiddenTests: 8,
-  },
-  {
+  }),
+  makeQuestion({
     id: "valid-parentheses",
     title: "Valid Parentheses",
     difficulty: "Easy",
     category: "Data Structures",
     tags: ["Stack", "Strings", "Parsing"],
+    visibility: "both",
+    estimatedMinutes: 12,
+    points: 40,
     prompt:
       "Given a string containing bracket characters, determine whether every opening bracket is closed in the correct order.",
-    starterCode: {
-      Java: `import java.util.*;
-
-class Solution {
-  public boolean isValid(String text) {
-    // Use a stack to track opening brackets.
-    return false;
-  }
-}`,
-      Python: `def is_valid(text):
-    # Use a stack to track opening brackets.
-    return False`,
-      "C#": `using System.Collections.Generic;
-
-public class Solution {
-  public bool IsValid(string text) {
-    // Use a stack to track opening brackets.
-    return false;
-  }
-}`,
-    },
     sampleTests: ['"()[]{}" -> true', '"([)]" -> false', '"{[]}" -> true'],
     hiddenTests: 6,
-  },
-  {
+  }),
+  makeQuestion({
     id: "employee-score",
     title: "Employee Score Aggregator",
     difficulty: "Medium",
     category: "Language Depth",
     tags: ["Collections", "Objects", "Sorting"],
+    visibility: "assessment",
+    estimatedMinutes: 22,
+    points: 60,
     prompt:
       "Build a function that receives consultant score records, groups them by consultant, and returns the top performer by average score.",
-    starterCode: {
-      Java: `import java.util.*;
-
-class Solution {
-  public String topPerformer(List<Record> records) {
-    // Group records and calculate averages.
-    return "";
-  }
-}`,
-      Python: `def top_performer(records):
-    # Group records and calculate averages.
-    return ""`,
-      "C#": `using System.Collections.Generic;
-using System.Linq;
-
-public class Solution {
-  public string TopPerformer(List<Record> records) {
-    // Group records and calculate averages.
-    return "";
-  }
-}`,
-    },
     sampleTests: ["A: 80,90 and B: 95 -> B", "A: 100 and B: 70,80 -> A"],
     hiddenTests: 7,
+  }),
+];
+
+const generatedQuestionDefinitions: Array<
+  Omit<Question, "starterCode"> & { returnType?: "array" | "boolean" | "number" | "string" }
+> = [
+  {
+    id: "merge-intervals",
+    title: "Merge Intervals",
+    difficulty: "Medium",
+    category: "Algorithms",
+    tags: ["Sorting", "Intervals", "Arrays"],
+    visibility: "assessment",
+    estimatedMinutes: 25,
+    points: 60,
+    prompt: "Merge all overlapping intervals and return the condensed interval list.",
+    sampleTests: ["[[1,3],[2,6],[8,10]] -> [[1,6],[8,10]]", "[[1,4],[4,5]] -> [[1,5]]"],
+    hiddenTests: 9,
+    returnType: "array",
+  },
+  {
+    id: "binary-search-insert-position",
+    title: "Binary Search Insert Position",
+    difficulty: "Easy",
+    category: "Algorithms",
+    tags: ["Binary Search", "Arrays"],
+    visibility: "practice",
+    estimatedMinutes: 10,
+    points: 30,
+    prompt: "Return the index of the target or the position where it should be inserted.",
+    sampleTests: ["nums=[1,3,5,6], target=5 -> 2", "nums=[1,3,5,6], target=2 -> 1"],
+    hiddenTests: 5,
+    returnType: "number",
+  },
+  {
+    id: "first-non-repeating-character",
+    title: "First Non-Repeating Character",
+    difficulty: "Easy",
+    category: "Data Structures",
+    tags: ["Hash Map", "Strings", "Counting"],
+    visibility: "both",
+    estimatedMinutes: 12,
+    points: 35,
+    prompt: "Return the first character in a string that appears exactly once, or an empty string.",
+    sampleTests: ['"talent" -> "a"', '"aabb" -> ""'],
+    hiddenTests: 6,
+    returnType: "string",
+  },
+  {
+    id: "kth-largest-element",
+    title: "Kth Largest Element",
+    difficulty: "Medium",
+    category: "Data Structures",
+    tags: ["Heap", "Sorting", "Arrays"],
+    visibility: "assessment",
+    estimatedMinutes: 20,
+    points: 55,
+    prompt: "Return the kth largest value in an unsorted array.",
+    sampleTests: ["nums=[3,2,1,5,6,4], k=2 -> 5", "nums=[3,2,3,1,2,4,5,5,6], k=4 -> 4"],
+    hiddenTests: 9,
+    returnType: "number",
+  },
+  {
+    id: "reverse-linked-list",
+    title: "Reverse Linked List",
+    difficulty: "Easy",
+    category: "Data Structures",
+    tags: ["Linked List", "Pointers"],
+    visibility: "practice",
+    estimatedMinutes: 14,
+    points: 35,
+    prompt: "Reverse a singly linked list and return the new head.",
+    sampleTests: ["1->2->3 -> 3->2->1", "empty -> empty"],
+    hiddenTests: 5,
+    returnType: "array",
+  },
+  {
+    id: "lowest-common-ancestor",
+    title: "Lowest Common Ancestor",
+    difficulty: "Medium",
+    category: "Trees",
+    tags: ["Tree", "DFS", "Recursion"],
+    visibility: "assessment",
+    estimatedMinutes: 24,
+    points: 65,
+    prompt: "Find the lowest common ancestor of two nodes in a binary tree.",
+    sampleTests: ["root=[3,5,1,6,2,0,8], p=5, q=1 -> 3", "p=5, q=4 -> 5"],
+    hiddenTests: 8,
+    returnType: "number",
+  },
+  {
+    id: "level-order-traversal",
+    title: "Level Order Traversal",
+    difficulty: "Medium",
+    category: "Trees",
+    tags: ["Tree", "BFS", "Queue"],
+    visibility: "both",
+    estimatedMinutes: 18,
+    points: 50,
+    prompt: "Return the values of a binary tree grouped by depth from top to bottom.",
+    sampleTests: ["[3,9,20,null,null,15,7] -> [[3],[9,20],[15,7]]", "[] -> []"],
+    hiddenTests: 7,
+    returnType: "array",
+  },
+  {
+    id: "detect-cycle-directed-graph",
+    title: "Detect Cycle in Directed Graph",
+    difficulty: "Medium",
+    category: "Graphs",
+    tags: ["Graph", "DFS", "Topological Sort"],
+    visibility: "assessment",
+    estimatedMinutes: 28,
+    points: 70,
+    prompt: "Determine whether a directed graph contains a cycle.",
+    sampleTests: ["0->1->2->0 -> true", "0->1, 1->2 -> false"],
+    hiddenTests: 10,
+    returnType: "boolean",
+  },
+  {
+    id: "shortest-path-grid",
+    title: "Shortest Path in Grid",
+    difficulty: "Medium",
+    category: "Graphs",
+    tags: ["BFS", "Matrix", "Queue"],
+    visibility: "assessment",
+    estimatedMinutes: 30,
+    points: 75,
+    prompt: "Return the shortest path length from the top-left cell to the bottom-right cell in a grid.",
+    sampleTests: ["[[0,0],[1,0]] -> 3", "blocked path -> -1"],
+    hiddenTests: 11,
+    returnType: "number",
+  },
+  {
+    id: "climbing-stairs",
+    title: "Climbing Stairs",
+    difficulty: "Easy",
+    category: "Dynamic Programming",
+    tags: ["DP", "Fibonacci"],
+    visibility: "practice",
+    estimatedMinutes: 10,
+    points: 30,
+    prompt: "Return how many distinct ways there are to climb n stairs taking 1 or 2 steps.",
+    sampleTests: ["n=2 -> 2", "n=5 -> 8"],
+    hiddenTests: 5,
+    returnType: "number",
+  },
+  {
+    id: "coin-change-minimum",
+    title: "Coin Change Minimum",
+    difficulty: "Medium",
+    category: "Dynamic Programming",
+    tags: ["DP", "Arrays", "Optimization"],
+    visibility: "assessment",
+    estimatedMinutes: 30,
+    points: 75,
+    prompt: "Return the minimum number of coins needed to make an amount, or -1 if impossible.",
+    sampleTests: ["coins=[1,2,5], amount=11 -> 3", "coins=[2], amount=3 -> -1"],
+    hiddenTests: 10,
+    returnType: "number",
+  },
+  {
+    id: "longest-increasing-subsequence",
+    title: "Longest Increasing Subsequence",
+    difficulty: "Hard",
+    category: "Dynamic Programming",
+    tags: ["DP", "Binary Search", "Arrays"],
+    visibility: "assessment",
+    estimatedMinutes: 35,
+    points: 90,
+    prompt: "Return the length of the longest strictly increasing subsequence.",
+    sampleTests: ["[10,9,2,5,3,7,101,18] -> 4", "[0,1,0,3,2,3] -> 4"],
+    hiddenTests: 12,
+    returnType: "number",
+  },
+  {
+    id: "java-stream-grouping",
+    title: "Java Stream Grouping",
+    difficulty: "Medium",
+    category: "Java",
+    tags: ["Java", "Streams", "Collections"],
+    visibility: "practice",
+    estimatedMinutes: 20,
+    points: 45,
+    prompt: "Group orders by customer and return the total order value per customer.",
+    sampleTests: ["A:10,A:15,B:7 -> A:25,B:7", "empty -> empty"],
+    hiddenTests: 6,
+    returnType: "array",
+  },
+  {
+    id: "java-exception-safe-parser",
+    title: "Java Exception-Safe Parser",
+    difficulty: "Easy",
+    category: "Java",
+    tags: ["Java", "Exceptions", "Parsing"],
+    visibility: "practice",
+    estimatedMinutes: 12,
+    points: 30,
+    prompt: "Parse a list of strings into integers and skip invalid values without failing.",
+    sampleTests: ['["1","x","2"] -> [1,2]', '["bad"] -> []'],
+    hiddenTests: 5,
+    returnType: "array",
+  },
+  {
+    id: "python-dictionary-normalizer",
+    title: "Python Dictionary Normalizer",
+    difficulty: "Easy",
+    category: "Python",
+    tags: ["Python", "Dictionary", "Strings"],
+    visibility: "practice",
+    estimatedMinutes: 10,
+    points: 30,
+    prompt: "Normalize dictionary keys to lowercase snake_case and remove empty values.",
+    sampleTests: ['{"First Name":"Ada"} -> {"first_name":"Ada"}', "empty values removed"],
+    hiddenTests: 5,
+    returnType: "array",
+  },
+  {
+    id: "python-generator-window",
+    title: "Python Sliding Window Generator",
+    difficulty: "Medium",
+    category: "Python",
+    tags: ["Python", "Generators", "Sliding Window"],
+    visibility: "assessment",
+    estimatedMinutes: 22,
+    points: 55,
+    prompt: "Yield all fixed-size windows from an iterable without materializing unnecessary state.",
+    sampleTests: ["[1,2,3,4], size=2 -> [1,2],[2,3],[3,4]", "size too large -> []"],
+    hiddenTests: 8,
+    returnType: "array",
+  },
+  {
+    id: "csharp-linq-top-customers",
+    title: "C# LINQ Top Customers",
+    difficulty: "Medium",
+    category: "C#",
+    tags: ["C#", "LINQ", "Collections"],
+    visibility: "practice",
+    estimatedMinutes: 20,
+    points: 45,
+    prompt: "Return the top three customers by total purchase amount using clean collection logic.",
+    sampleTests: ["A:20,B:50,A:40 -> A,B", "ties sorted by name"],
+    hiddenTests: 7,
+    returnType: "array",
+  },
+  {
+    id: "csharp-null-safe-transform",
+    title: "C# Null-Safe Transform",
+    difficulty: "Easy",
+    category: "C#",
+    tags: ["C#", "Null Safety", "Strings"],
+    visibility: "practice",
+    estimatedMinutes: 12,
+    points: 30,
+    prompt: "Transform optional profile fields into display names while safely handling nulls.",
+    sampleTests: ["first=Grace,last=Hopper -> Grace Hopper", "null fields -> Unknown"],
+    hiddenTests: 5,
+    returnType: "string",
+  },
+  {
+    id: "rate-limiter",
+    title: "Sliding Window Rate Limiter",
+    difficulty: "Hard",
+    category: "System Design Coding",
+    tags: ["Design", "Queues", "Time"],
+    visibility: "assessment",
+    estimatedMinutes: 35,
+    points: 95,
+    prompt: "Implement an in-memory sliding window rate limiter with per-user limits.",
+    sampleTests: ["3 requests in window -> allowed", "4th request -> blocked"],
+    hiddenTests: 12,
+    returnType: "boolean",
+  },
+  {
+    id: "lru-cache",
+    title: "LRU Cache",
+    difficulty: "Hard",
+    category: "System Design Coding",
+    tags: ["Design", "Hash Map", "Linked List"],
+    visibility: "assessment",
+    estimatedMinutes: 35,
+    points: 95,
+    prompt: "Design an LRU cache with O(1) get and put operations.",
+    sampleTests: ["put/get sequence -> expected evictions", "capacity=1 -> latest only"],
+    hiddenTests: 12,
+    returnType: "array",
+  },
+  {
+    id: "api-response-flattener",
+    title: "API Response Flattener",
+    difficulty: "Medium",
+    category: "Practical Coding",
+    tags: ["Objects", "Recursion", "JSON"],
+    visibility: "both",
+    estimatedMinutes: 22,
+    points: 55,
+    prompt: "Flatten a nested object response into dot-notation keys.",
+    sampleTests: ['{"a":{"b":1}} -> {"a.b":1}', "arrays preserved"],
+    hiddenTests: 8,
+    returnType: "array",
+  },
+  {
+    id: "csv-cleaner",
+    title: "CSV Cleaner",
+    difficulty: "Medium",
+    category: "Practical Coding",
+    tags: ["Strings", "Parsing", "Validation"],
+    visibility: "practice",
+    estimatedMinutes: 18,
+    points: 45,
+    prompt: "Clean CSV rows by trimming whitespace, dropping invalid rows, and normalizing email fields.",
+    sampleTests: ["valid rows retained", "bad email dropped"],
+    hiddenTests: 7,
+    returnType: "array",
+  },
+  {
+    id: "anagram-groups",
+    title: "Group Anagrams",
+    difficulty: "Medium",
+    category: "Data Structures",
+    tags: ["Hash Map", "Strings", "Sorting"],
+    visibility: "both",
+    estimatedMinutes: 16,
+    points: 45,
+    prompt: "Group words that are anagrams of each other.",
+    sampleTests: ['["eat","tea","tan","ate"] -> grouped anagrams', "empty -> []"],
+    hiddenTests: 7,
+    returnType: "array",
+  },
+  {
+    id: "balanced-partition",
+    title: "Balanced Partition",
+    difficulty: "Hard",
+    category: "Dynamic Programming",
+    tags: ["DP", "Sets", "Optimization"],
+    visibility: "assessment",
+    estimatedMinutes: 34,
+    points: 90,
+    prompt: "Determine whether an array can be partitioned into two subsets with equal sum.",
+    sampleTests: ["[1,5,11,5] -> true", "[1,2,3,5] -> false"],
+    hiddenTests: 11,
+    returnType: "boolean",
+  },
+  {
+    id: "matrix-spiral",
+    title: "Matrix Spiral",
+    difficulty: "Medium",
+    category: "Algorithms",
+    tags: ["Matrix", "Simulation", "Arrays"],
+    visibility: "practice",
+    estimatedMinutes: 18,
+    points: 45,
+    prompt: "Return all matrix values in spiral order.",
+    sampleTests: ["[[1,2,3],[4,5,6],[7,8,9]] -> [1,2,3,6,9,8,7,4,5]", "single row"],
+    hiddenTests: 7,
+    returnType: "array",
+  },
+  {
+    id: "topological-course-order",
+    title: "Course Order",
+    difficulty: "Medium",
+    category: "Graphs",
+    tags: ["Graph", "Topological Sort", "Queue"],
+    visibility: "assessment",
+    estimatedMinutes: 28,
+    points: 70,
+    prompt: "Return a valid order to complete courses given prerequisite pairs.",
+    sampleTests: ["2, [[1,0]] -> [0,1]", "cycle -> []"],
+    hiddenTests: 10,
+    returnType: "array",
+  },
+  {
+    id: "string-compression",
+    title: "String Compression",
+    difficulty: "Easy",
+    category: "Algorithms",
+    tags: ["Strings", "Two Pointers"],
+    visibility: "practice",
+    estimatedMinutes: 14,
+    points: 35,
+    prompt: "Compress consecutive characters using run-length encoding.",
+    sampleTests: ['"aaabb" -> "a3b2"', '"abc" -> "abc"'],
+    hiddenTests: 5,
+    returnType: "string",
+  },
+  {
+    id: "max-profit-two-transactions",
+    title: "Max Profit with Two Transactions",
+    difficulty: "Hard",
+    category: "Dynamic Programming",
+    tags: ["DP", "Arrays", "Finance"],
+    visibility: "assessment",
+    estimatedMinutes: 36,
+    points: 95,
+    prompt: "Return the maximum profit from at most two stock transactions.",
+    sampleTests: ["[3,3,5,0,0,3,1,4] -> 6", "[1,2,3,4,5] -> 4"],
+    hiddenTests: 12,
+    returnType: "number",
+  },
+  {
+    id: "audit-log-filter",
+    title: "Audit Log Filter",
+    difficulty: "Medium",
+    category: "Practical Coding",
+    tags: ["Filtering", "Dates", "Security"],
+    visibility: "both",
+    estimatedMinutes: 20,
+    points: 50,
+    prompt: "Filter audit events by actor, action, and time range while preserving sort order.",
+    sampleTests: ["actor=admin -> matching events", "date range excludes older events"],
+    hiddenTests: 8,
+    returnType: "array",
+  },
+  {
+    id: "retry-backoff-scheduler",
+    title: "Retry Backoff Scheduler",
+    difficulty: "Medium",
+    category: "System Design Coding",
+    tags: ["Queues", "Time", "Reliability"],
+    visibility: "assessment",
+    estimatedMinutes: 26,
+    points: 65,
+    prompt: "Calculate retry timestamps using exponential backoff and a max delay cap.",
+    sampleTests: ["base=2, attempts=3 -> [2,4,8]", "cap applied"],
+    hiddenTests: 9,
+    returnType: "array",
   },
 ];
+
+export const questions: Question[] = [
+  ...seedQuestions,
+  ...generatedQuestionDefinitions.map((definition) => makeQuestion(definition)),
+];
+
+export const practiceQuestions = questions.filter((question) => question.visibility !== "assessment");
+export const assessmentQuestions = questions.filter((question) => question.visibility !== "practice");
 
 export const assessment = {
   title: "Consultant Core Coding Screen",
   durationMinutes: 45,
-  questions: [questions[0], questions[1]],
+  questions: assessmentQuestions.slice(0, 3),
 };
+
+export const practiceLeaderboard: PracticeLeaderboardEntry[] = [
+  {
+    rank: 1,
+    candidateName: "Aarav Mehta",
+    primaryLanguage: "Python",
+    solved: 42,
+    attempts: 51,
+    averageScore: 94,
+    fastestSolve: "04m 18s",
+    streakDays: 12,
+    badge: "Algorithm Sprinter",
+  },
+  {
+    rank: 2,
+    candidateName: "Priya Shah",
+    primaryLanguage: "Java",
+    solved: 39,
+    attempts: 48,
+    averageScore: 91,
+    fastestSolve: "05m 02s",
+    streakDays: 9,
+    badge: "Java Ace",
+  },
+  {
+    rank: 3,
+    candidateName: "Maya Iyer",
+    primaryLanguage: "C#",
+    solved: 35,
+    attempts: 44,
+    averageScore: 88,
+    fastestSolve: "05m 45s",
+    streakDays: 7,
+    badge: "Data Structure Pro",
+  },
+  {
+    rank: 4,
+    candidateName: "Daniel Kim",
+    primaryLanguage: "Python",
+    solved: 31,
+    attempts: 42,
+    averageScore: 84,
+    fastestSolve: "06m 11s",
+    streakDays: 5,
+    badge: "Consistency Builder",
+  },
+  {
+    rank: 5,
+    candidateName: "Sofia Chen",
+    primaryLanguage: "Java",
+    solved: 28,
+    attempts: 36,
+    averageScore: 82,
+    fastestSolve: "06m 40s",
+    streakDays: 4,
+    badge: "Practice Climber",
+  },
+  {
+    rank: 6,
+    candidateName: "Noah Patel",
+    primaryLanguage: "C#",
+    solved: 24,
+    attempts: 33,
+    averageScore: 79,
+    fastestSolve: "07m 20s",
+    streakDays: 3,
+    badge: "Momentum",
+  },
+];
 
 export const candidateResults: CandidateResult[] = [
   {
@@ -340,4 +803,107 @@ export const detailedReports: DetailedReport[] = [
 
 export function getDetailedReport(candidateId: string) {
   return detailedReports.find((report) => report.candidateId === candidateId) ?? detailedReports[0];
+}
+
+type QuestionDefinition = Omit<Question, "starterCode"> & {
+  returnType?: "array" | "boolean" | "number" | "string";
+};
+
+function makeQuestion(definition: QuestionDefinition): Question {
+  const returnType = definition.returnType ?? "array";
+  return {
+    ...definition,
+    starterCode: buildStarterCode(definition.id, returnType),
+  };
+}
+
+function buildStarterCode(
+  id: string,
+  returnType: NonNullable<QuestionDefinition["returnType"]>,
+): Record<Language, string> {
+  const camel = toCamelCase(id);
+  const pascal = camel.charAt(0).toUpperCase() + camel.slice(1);
+  const pythonName = id.replaceAll("-", "_");
+  const javaReturnType = mapJavaReturnType(returnType);
+  const csharpReturnType = mapCSharpReturnType(returnType);
+  const pythonReturn = mapPythonReturnValue(returnType);
+  const javaReturn = mapJavaReturnValue(returnType);
+  const csharpReturn = mapCSharpReturnValue(returnType);
+
+  return {
+    Java: `import java.util.*;
+
+class Solution {
+  public ${javaReturnType} ${camel}(Object input) {
+    // Write your solution here.
+    ${javaReturn}
+  }
+}`,
+    Python: `def ${pythonName}(input):
+    # Write your solution here.
+    ${pythonReturn}`,
+    "C#": `using System.Collections.Generic;
+using System.Linq;
+
+public class Solution {
+  public ${csharpReturnType} ${pascal}(object input) {
+    // Write your solution here.
+    ${csharpReturn}
+  }
+}`,
+  };
+}
+
+function toCamelCase(value: string) {
+  return value.replace(/-([a-z])/g, (_, char: string) => char.toUpperCase());
+}
+
+function mapJavaReturnType(returnType: NonNullable<QuestionDefinition["returnType"]>) {
+  const map = {
+    array: "List<Object>",
+    boolean: "boolean",
+    number: "int",
+    string: "String",
+  };
+  return map[returnType];
+}
+
+function mapCSharpReturnType(returnType: NonNullable<QuestionDefinition["returnType"]>) {
+  const map = {
+    array: "List<object>",
+    boolean: "bool",
+    number: "int",
+    string: "string",
+  };
+  return map[returnType];
+}
+
+function mapPythonReturnValue(returnType: NonNullable<QuestionDefinition["returnType"]>) {
+  const map = {
+    array: "return []",
+    boolean: "return False",
+    number: "return 0",
+    string: "return \"\"",
+  };
+  return map[returnType];
+}
+
+function mapJavaReturnValue(returnType: NonNullable<QuestionDefinition["returnType"]>) {
+  const map = {
+    array: "return new ArrayList<>();",
+    boolean: "return false;",
+    number: "return 0;",
+    string: "return \"\";",
+  };
+  return map[returnType];
+}
+
+function mapCSharpReturnValue(returnType: NonNullable<QuestionDefinition["returnType"]>) {
+  const map = {
+    array: "return new List<object>();",
+    boolean: "return false;",
+    number: "return 0;",
+    string: "return \"\";",
+  };
+  return map[returnType];
 }

@@ -37,6 +37,15 @@ export default function AdminPage() {
                   <p>{question.category}</p>
                   <h3>{question.title}</h3>
                   <div className="tag-row">
+                    <span>
+                      {question.visibility === "both"
+                        ? "Practice + test"
+                        : question.visibility === "practice"
+                          ? "Practice only"
+                          : "Assessment only"}
+                    </span>
+                    <span>{question.points} pts</span>
+                    <span>{question.estimatedMinutes} min</span>
                     {question.tags.map((tag) => (
                       <span key={tag}>{tag}</span>
                     ))}
