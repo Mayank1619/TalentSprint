@@ -29,6 +29,8 @@ type AuthContextValue = {
   accounts: StoredAccount[];
   signIn: (email: string, password: string) => Promise<AuthResult>;
   registerCandidate: (input: RegistrationInput) => Promise<AuthResult>;
+  requestPasswordReset: (email: string) => Promise<AuthResult>;
+  updatePassword: (password: string, confirmPassword: string) => Promise<AuthResult>;
   startGuestPractice: (input: GuestPracticeInput) => Promise<AuthResult>;
   signOut: () => Promise<void>;
 };
@@ -174,6 +176,46 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           message: "Candidate account created.",
           redirectTo: roleHomePath(nextUser.role),
         };
+      },
+      requestPasswordReset: async (email: string) => {
+        const normalizedEmail = normalizeEmail(email);
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) {
+          return { ok: false, message: "Enter a valid email address." };
+        }
+
+        const supabase = getSupabaseClient();
+        if (!supabase) {
+          return {
+            ok: true,
+            message: "Password reset email would be sent in production auth mode.",
+          };
+        }
+
+        const { error } = await withAuthRequest(() =>
+          supabase.auth.resetPasswordForEmail(normalizedEmail, {
+            redirectTo: `${window.location.origin}/reset-password`,
+          }),
+        );
+
+        if (error) return { ok: false, message: error.message };
+        return { ok: true, message: "Check your email for the password reset link." };
+      },
+      updatePassword: async (password: string, confirmPassword: string) => {
+        if (password.length < 8) return { ok: false, message: "Password must be at least 8 characters." };
+        if (!/[A-Z]/.test(password) || !/[0-9]/.test(password)) {
+          return { ok: false, message: "Password must include an uppercase letter and a number." };
+        }
+        if (password !== confirmPassword) return { ok: false, message: "Passwords do not match." };
+
+        const supabase = getSupabaseClient();
+        if (!supabase) {
+          return { ok: true, message: "Password would be updated in production auth mode." };
+        }
+
+        const { data, error } = await withAuthRequest(() => supabase.auth.updateUser({ password }));
+        if (error) return { ok: false, message: error.message };
+        if (data.user) setUser(mapSupabaseUser(data.user));
+        return { ok: true, message: "Password updated. You can continue to your workspace." };
       },
       startGuestPractice: async (input: GuestPracticeInput) => {
         const validationMessage = validateGuestPractice(input);

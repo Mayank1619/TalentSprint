@@ -36,6 +36,27 @@ test("candidate can register and lands on practice", async ({ page }) => {
   await expect(page.getByRole("heading", { name: "Choose your next practice sprint." })).toBeVisible();
 });
 
+test("password reset pages are available from login", async ({ page }) => {
+  await page.goto("/login");
+
+  await page.getByRole("link", { name: "Forgot password?" }).click();
+  await expect(page).toHaveURL("/forgot-password");
+  await expect(page.getByRole("heading", { name: "Send a reset link." })).toBeVisible();
+  await page.getByLabel("Email").fill("candidate@example.com");
+  await page.getByRole("button", { name: "Send reset link" }).click();
+  await expect(page.getByText("Password reset email would be sent in production auth mode.")).toBeVisible();
+
+  await page.goto("/reset-password");
+  await expect(page.getByRole("heading", { name: "Choose a new password." })).toBeVisible();
+  await page.getByLabel("New password", { exact: true }).fill("Password123!");
+  await expect(page.getByLabel("New password", { exact: true })).toHaveAttribute("type", "password");
+  await page.getByRole("button", { name: "Show new password" }).click();
+  await expect(page.getByLabel("New password", { exact: true })).toHaveAttribute("type", "text");
+  await page.getByLabel("Confirm new password", { exact: true }).fill("Password123!");
+  await page.getByRole("button", { name: "Update password" }).click();
+  await expect(page.getByText("Password would be updated in production auth mode.")).toBeVisible();
+});
+
 test("guest can practice with name and email for leaderboard", async ({ page }) => {
   await page.goto("/practice");
 

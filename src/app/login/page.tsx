@@ -130,6 +130,9 @@ export default function LoginPage() {
                   </button>
                 </span>
               </div>
+              <Link className="inline-link auth-secondary-link" href="/forgot-password">
+                Forgot password?
+              </Link>
               <button className="button primary" type="submit">
                 <UserRoundCheck size={18} /> Log in
               </button>

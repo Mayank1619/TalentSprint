@@ -1234,6 +1234,11 @@ input:focus-visible {
   align-items: start;
 }
 
+.compact-auth-layout {
+  max-width: 62rem;
+  margin-inline: auto;
+}
+
 .auth-panel {
   display: grid;
   gap: 1rem;
@@ -1344,6 +1349,10 @@ input:focus-visible {
   color: var(--text-secondary);
   font-weight: 750;
   padding: 0.8rem;
+}
+
+.auth-secondary-link {
+  width: fit-content;
 }
 
 .auth-helper code {
