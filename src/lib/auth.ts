@@ -5,6 +5,7 @@ export type DemoUser = {
   name: string;
   email: string;
   role: Role;
+  isGuest?: boolean;
 };
 
 export type StoredAccount = DemoUser & {
@@ -21,8 +22,14 @@ export type RegistrationInput = {
   confirmPassword: string;
 };
 
+export type GuestPracticeInput = {
+  name: string;
+  email: string;
+};
+
 export const authStorageKeys = {
   accounts: "talent-sprint-accounts",
+  guest: "talent-sprint-guest-user",
   user: "talent-sprint-user",
 };
 
@@ -99,6 +106,16 @@ export function validateRegistration(input: RegistrationInput) {
     return "Password must include an uppercase letter and a number.";
   }
   if (password !== input.confirmPassword) return "Passwords do not match.";
+
+  return null;
+}
+
+export function validateGuestPractice(input: GuestPracticeInput) {
+  const name = input.name.trim();
+  const email = normalizeEmail(input.email);
+
+  if (name.length < 2) return "Enter your name for the leaderboard.";
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return "Enter a valid email address.";
 
   return null;
 }

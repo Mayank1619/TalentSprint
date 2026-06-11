@@ -8,8 +8,10 @@ import {
   parseRole,
   roleHomePath,
   seededAccounts,
+  validateGuestPractice,
   validateRegistration,
   type DemoUser,
+  type GuestPracticeInput,
   type RegistrationInput,
   type StoredAccount,
 } from "@/lib/auth";
@@ -27,6 +29,7 @@ type AuthContextValue = {
   accounts: StoredAccount[];
   signIn: (email: string, password: string) => Promise<AuthResult>;
   registerCandidate: (input: RegistrationInput) => Promise<AuthResult>;
+  startGuestPractice: (input: GuestPracticeInput) => Promise<AuthResult>;
   signOut: () => Promise<void>;
 };
 
@@ -41,13 +44,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const supabase = getSupabaseClient();
     if (supabase) {
       supabase.auth.getSession().then(({ data }) => {
-        setUser(data.session?.user ? mapSupabaseUser(data.session.user) : null);
+        setUser(data.session?.user ? mapSupabaseUser(data.session.user) : loadCurrentGuest());
       });
 
       const {
         data: { subscription },
       } = supabase.auth.onAuthStateChange((_event, session) => {
-        setUser(session?.user ? mapSupabaseUser(session.user) : null);
+        setUser(session?.user ? mapSupabaseUser(session.user) : loadCurrentGuest());
       });
 
       return () => subscription.unsubscribe();
@@ -56,7 +59,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     window.requestAnimationFrame(() => {
       const nextAccounts = loadAccounts();
       const storedUserId = window.localStorage.getItem(authStorageKeys.user);
-      const storedUser = nextAccounts.find((item) => item.id === storedUserId) ?? null;
+      const storedGuest = loadGuest();
+      const storedUser =
+        nextAccounts.find((item) => item.id === storedUserId) ??
+        (storedGuest?.id === storedUserId ? storedGuest : null);
       setAccounts(nextAccounts);
       setUser(storedUser);
     });
@@ -165,6 +171,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           redirectTo: roleHomePath(nextUser.role),
         };
       },
+      startGuestPractice: async (input: GuestPracticeInput) => {
+        const validationMessage = validateGuestPractice(input);
+        if (validationMessage) return { ok: false, message: validationMessage };
+
+        const email = normalizeEmail(input.email);
+        const nextUser: DemoUser = {
+          id: `guest-${slugify(email)}-${crypto.randomUUID()}`,
+          name: input.name.trim(),
+          email,
+          role: "candidate",
+          isGuest: true,
+        };
+
+        window.localStorage.setItem(authStorageKeys.guest, JSON.stringify(nextUser));
+        window.localStorage.setItem(authStorageKeys.user, nextUser.id);
+        setUser(nextUser);
+
+        return {
+          ok: true,
+          message: `Guest practice started for ${nextUser.name}.`,
+          redirectTo: "/practice",
+        };
+      },
       signOut: async () => {
         const supabase = getSupabaseClient();
         if (supabase) {
@@ -206,6 +235,24 @@ function saveAccounts(accounts: StoredAccount[]) {
   window.localStorage.setItem(authStorageKeys.accounts, JSON.stringify(accounts));
 }
 
+function loadGuest() {
+  const stored = window.localStorage.getItem(authStorageKeys.guest);
+  if (!stored) return null;
+
+  try {
+    const parsed = JSON.parse(stored) as DemoUser;
+    return isGuestUser(parsed) ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
+function loadCurrentGuest() {
+  const storedUserId = window.localStorage.getItem(authStorageKeys.user);
+  const storedGuest = loadGuest();
+  return storedGuest?.id === storedUserId ? storedGuest : null;
+}
+
 function parseAccounts(value: string | null) {
   if (!value) return [];
 
@@ -227,6 +274,21 @@ function isStoredAccount(value: StoredAccount) {
     typeof value.password === "string" &&
     typeof value.createdAt === "string"
   );
+}
+
+function isGuestUser(value: DemoUser) {
+  return (
+    typeof value?.id === "string" &&
+    value.id.startsWith("guest-") &&
+    typeof value.name === "string" &&
+    typeof value.email === "string" &&
+    value.role === "candidate" &&
+    value.isGuest === true
+  );
+}
+
+function slugify(value: string) {
+  return value.replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "") || "candidate";
 }
 
 function mapSupabaseUser(value: {

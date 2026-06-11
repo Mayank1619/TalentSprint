@@ -33,6 +33,28 @@ test("candidate can register and lands on practice", async ({ page }) => {
   await expect(page.getByRole("heading", { name: "Choose your next practice sprint." })).toBeVisible();
 });
 
+test("guest can practice with name and email for leaderboard", async ({ page }) => {
+  await page.goto("/practice");
+
+  await page.getByLabel("Name for leaderboard").fill("Guest Runner");
+  await page.getByLabel("Email").fill("guest.runner@example.com");
+  await page.getByRole("button", { name: "Practice as guest" }).click();
+
+  await expect(page.getByRole("heading", { name: "Choose your next practice sprint." })).toBeVisible();
+  await expect(page.getByText("Guest Runner")).toBeVisible();
+
+  await page.goto("/practice/pair-sum");
+  await page.getByRole("button", { name: "Java" }).click();
+  await page.getByRole("button", { name: "Submit" }).click();
+
+  await expect(page).toHaveURL("/practice/pair-sum/report", { timeout: 15_000 });
+  await expect(page.getByText("Generated from your latest submission")).toBeVisible();
+
+  await page.locator(".report-actions").getByRole("link", { name: "Leaderboard" }).click();
+  await expect(page).toHaveURL("/leaderboard");
+  await expect(page.getByRole("heading", { level: 2, name: "Guest Runner" })).toBeVisible();
+});
+
 test("candidate login lands on practice", async ({ page }) => {
   await page.goto("/login");
   await page.getByLabel("Email").fill("candidate@talentsprint.dev");
