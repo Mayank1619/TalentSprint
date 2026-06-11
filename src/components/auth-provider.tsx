@@ -86,7 +86,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           );
 
           if (error || !data.user) {
-            return { ok: false, message: error?.message ?? "Email or password is incorrect." };
+            return { ok: false, message: formatAuthError(error?.message) };
           }
 
           const nextUser = mapSupabaseUser(data.user);
@@ -128,6 +128,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               email,
               password: input.password,
               options: {
+                emailRedirectTo: getAuthRedirectUrl("/login"),
                 data: {
                   name: input.name.trim(),
                   role: "candidate",
@@ -193,12 +194,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         const { error } = await withAuthRequest(() =>
           supabase.auth.resetPasswordForEmail(normalizedEmail, {
-            redirectTo: `${window.location.origin}/reset-password`,
+            redirectTo: getAuthRedirectUrl("/reset-password"),
           }),
         );
 
         if (error) return { ok: false, message: error.message };
-        return { ok: true, message: "Check your email for the password reset link." };
+        return {
+          ok: true,
+          message:
+            "If this account exists, Supabase will send a reset link. Check inbox and spam, and use the latest email link.",
+        };
       },
       updatePassword: async (password: string, confirmPassword: string) => {
         if (password.length < 8) return { ok: false, message: "Password must be at least 8 characters." };
@@ -335,6 +340,30 @@ function isGuestUser(value: DemoUser) {
 
 function slugify(value: string) {
   return value.replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "") || "candidate";
+}
+
+function getAuthRedirectUrl(path: string) {
+  const configuredOrigin =
+    process.env.NEXT_PUBLIC_SITE_URL ?? process.env.NEXT_PUBLIC_VERCEL_URL ?? window.location.origin;
+  const origin = configuredOrigin.startsWith("http")
+    ? configuredOrigin.replace(/\/+$/, "")
+    : `https://${configuredOrigin.replace(/\/+$/, "")}`;
+
+  return `${origin}${path}`;
+}
+
+function formatAuthError(message: string | undefined) {
+  if (!message) return "Email or password is incorrect.";
+
+  const lowerMessage = message.toLowerCase();
+  if (lowerMessage.includes("invalid login credentials")) {
+    return "Email or password is incorrect. If you just registered, confirm your email first or use Forgot password.";
+  }
+  if (lowerMessage.includes("email not confirmed")) {
+    return "Please confirm your email before logging in. Check your inbox and spam folder.";
+  }
+
+  return message;
 }
 
 async function withAuthRequest<TResponse extends { data: unknown; error: { message: string } | null }>(

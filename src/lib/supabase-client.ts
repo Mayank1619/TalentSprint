@@ -25,7 +25,7 @@ export function getSupabaseClient() {
 }
 
 function getSupabaseUrl() {
-  return process.env.NEXT_PUBLIC_SUPABASE_URL;
+  return normalizeSupabaseProjectUrl(process.env.NEXT_PUBLIC_SUPABASE_URL);
 }
 
 function getSupabaseKey() {
@@ -33,4 +33,13 @@ function getSupabaseKey() {
     process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ??
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
   );
+}
+
+export function normalizeSupabaseProjectUrl(value: string | undefined) {
+  if (!value) return undefined;
+
+  const trimmed = value.trim().replace(/\/+$/, "");
+  if (!trimmed) return undefined;
+
+  return trimmed.replace(/\/(rest|auth|storage)\/v1$/i, "");
 }
