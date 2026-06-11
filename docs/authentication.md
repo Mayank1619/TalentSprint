@@ -10,6 +10,9 @@ Set these variables locally and in Vercel:
 ```text
 NEXT_PUBLIC_SUPABASE_URL=<your Supabase project URL>
 NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=<your Supabase publishable key>
+NEXT_PUBLIC_MASTER_ADMIN_EMAIL=<admin email shown as administrator in the UI>
+MASTER_ADMIN_EMAIL=<server-side admin email allowlist>
+SUPABASE_SERVICE_ROLE_KEY=<server-only Supabase service role key>
 ```
 
 When both values exist:
@@ -65,3 +68,15 @@ Navigation is also role-aware:
 
 If Supabase variables are not configured, the app falls back to local browser auth so Playwright and
 local demos still run. This fallback should not be used as the production security boundary.
+
+Local/demo seeded accounts:
+
+```text
+Candidate: candidate@talentsprint.dev / Password123!
+Examiner: examiner@talentsprint.dev / Password123!
+Admin: admin@talentsprint.dev / Admin@2026!
+```
+
+For production, create the admin account in Supabase Auth using the configured master admin email,
+then set the password through Supabase's invite or password reset email flow. Do not hardcode a real
+production admin password in the repository.

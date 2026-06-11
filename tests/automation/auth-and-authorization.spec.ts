@@ -103,7 +103,7 @@ test("examiner and administrator login land on their workspaces", async ({ page 
   await page.getByRole("button", { name: "Sign out" }).click();
   await page.goto("/login");
   await page.getByLabel("Email").fill("admin@talentsprint.dev");
-  await page.getByLabel("Password", { exact: true }).fill("Password123!");
+  await page.getByLabel("Password", { exact: true }).fill("Admin@2026!");
   await page.locator("form").getByRole("button", { name: "Log in" }).click();
   await expect(page).toHaveURL("/admin", { timeout: 15_000 });
   await expect(page.getByRole("heading", { name: "Manage the question library and platform settings." })).toBeVisible();

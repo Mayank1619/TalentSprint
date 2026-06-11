@@ -74,11 +74,23 @@ export const demoUsers: DemoUser[] = [
   },
 ];
 
-export const seededAccounts: StoredAccount[] = demoUsers.map((user) => ({
-  ...user,
-  password: "Password123!",
-  createdAt: "2026-06-09T00:00:00.000Z",
-}));
+export const seededAccounts: StoredAccount[] = [
+  {
+    ...demoUsers[0],
+    password: "Password123!",
+    createdAt: "2026-06-09T00:00:00.000Z",
+  },
+  {
+    ...demoUsers[1],
+    password: "Password123!",
+    createdAt: "2026-06-09T00:00:00.000Z",
+  },
+  {
+    ...demoUsers[2],
+    password: "Admin@2026!",
+    createdAt: "2026-06-09T00:00:00.000Z",
+  },
+];
 
 export function canAccess(role: Role | null, allowedRoles: Role[]) {
   return role !== null && allowedRoles.includes(role);
