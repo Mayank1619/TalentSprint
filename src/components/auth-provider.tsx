@@ -16,6 +16,7 @@ import {
   type DemoUser,
   type GuestPracticeInput,
   type ManagedExaminer,
+  type ManagedUser,
   type RegistrationInput,
   type StoredAccount,
 } from "@/lib/auth";
@@ -37,8 +38,10 @@ type AuthContextValue = {
   requestPasswordReset: (email: string) => Promise<AuthResult>;
   updatePassword: (password: string, confirmPassword: string) => Promise<AuthResult>;
   startGuestPractice: (input: GuestPracticeInput) => Promise<AuthResult>;
+  listManagedUsers: () => Promise<ManagedUser[]>;
   listManagedExaminers: () => Promise<ManagedExaminer[]>;
   inviteExaminer: (input: ExaminerInviteInput) => Promise<AuthResult>;
+  updateExaminer: (id: string, input: ExaminerInviteInput) => Promise<AuthResult>;
   setExaminerAccess: (id: string, enabled: boolean) => Promise<AuthResult>;
   removeExaminer: (id: string) => Promise<AuthResult>;
   signOut: () => Promise<void>;
@@ -281,6 +284,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           redirectTo: "/practice",
         };
       },
+      listManagedUsers: async () => {
+        const supabase = getSupabaseClient();
+        if (supabase) {
+          const result = await adminApiRequest<{ users?: ManagedUser[] }>("/api/admin/examiners", {
+            method: "GET",
+          });
+          return result.users ?? [];
+        }
+
+        const nextAccounts = loadAccounts();
+        setAccounts(nextAccounts);
+        return nextAccounts.map(mapStoredManagedUser);
+      },
       listManagedExaminers: async () => {
         const supabase = getSupabaseClient();
         if (supabase) {
@@ -336,6 +352,44 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           message:
             "Examiner access created. In local mode they can sign in with Password123!; production sends a secure setup email.",
         };
+      },
+      updateExaminer: async (id: string, input: ExaminerInviteInput) => {
+        const validationMessage = validateExaminerInvite(input);
+        if (validationMessage) return { ok: false, message: validationMessage };
+
+        const supabase = getSupabaseClient();
+        if (supabase) {
+          return adminApiRequest<AuthResult>("/api/admin/examiners", {
+            method: "POST",
+            body: JSON.stringify({
+              action: "update",
+              id,
+              name: input.name.trim(),
+              email: normalizeEmail(input.email),
+            }),
+          });
+        }
+
+        const nextAccounts = accounts.length > 0 ? accounts : loadAccounts();
+        const email = normalizeEmail(input.email);
+        const existingEmailOwner = nextAccounts.find((account) => account.email === email && account.id !== id);
+        if (existingEmailOwner) {
+          return { ok: false, message: "Another account already uses that email." };
+        }
+
+        const updatedAccounts = nextAccounts.map((account) =>
+          account.id === id && account.role === "examiner"
+            ? {
+                ...account,
+                name: input.name.trim(),
+                email,
+              }
+            : account,
+        );
+
+        saveAccounts(updatedAccounts);
+        setAccounts(updatedAccounts);
+        return { ok: true, message: "Examiner details updated." };
       },
       setExaminerAccess: async (id: string, enabled: boolean) => {
         const supabase = getSupabaseClient();
@@ -544,6 +598,18 @@ function mapStoredExaminer(account: StoredAccount & { role: "examiner" }): Manag
     name: account.name,
     email: account.email,
     role: "examiner",
+    status: parseAccountStatus(account.status),
+    createdAt: account.createdAt,
+    invitedAt: account.invitedAt,
+  };
+}
+
+function mapStoredManagedUser(account: StoredAccount): ManagedUser {
+  return {
+    id: account.id,
+    name: account.name,
+    email: account.email,
+    role: account.role,
     status: parseAccountStatus(account.status),
     createdAt: account.createdAt,
     invitedAt: account.invitedAt,

@@ -42,6 +42,17 @@ export type ManagedExaminer = {
   lastSignInAt?: string;
 };
 
+export type ManagedUser = {
+  id: string;
+  name: string;
+  email: string;
+  role: Role;
+  status: AccountStatus;
+  createdAt?: string;
+  invitedAt?: string;
+  lastSignInAt?: string;
+};
+
 export type GuestPracticeInput = {
   name: string;
   email: string;

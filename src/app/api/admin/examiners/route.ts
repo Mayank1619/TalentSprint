@@ -6,11 +6,13 @@ import {
   parseRole,
   validateExaminerInvite,
   type ManagedExaminer,
+  type ManagedUser,
 } from "@/lib/auth";
 import { normalizeSupabaseProjectUrl } from "@/lib/supabase-client";
 
 type ExaminerAction =
   | { action?: "invite"; name?: string; email?: string }
+  | { action?: "update"; id?: string; name?: string; email?: string }
   | { action?: "enable" | "disable" | "remove"; id?: string };
 
 export async function GET(request: Request) {
@@ -25,11 +27,10 @@ export async function GET(request: Request) {
     return NextResponse.json({ ok: false, message: error.message }, { status: 502 });
   }
 
-  const examiners = data.users
-    .filter((user) => parseRole(user.user_metadata?.role) === "examiner")
-    .map(mapSupabaseExaminer);
+  const users = data.users.map(mapSupabaseUser);
+  const examiners = users.filter((user): user is ManagedExaminer => user.role === "examiner");
 
-  return NextResponse.json({ ok: true, examiners });
+  return NextResponse.json({ ok: true, users, examiners });
 }
 
 export async function POST(request: Request) {
@@ -43,6 +44,36 @@ export async function POST(request: Request) {
 
   if (payload.action === "invite") {
     return inviteExaminer(admin, payload);
+  }
+
+  if (payload.action === "update") {
+    if (!payload.id) {
+      return NextResponse.json({ ok: false, message: "Examiner id is required." }, { status: 400 });
+    }
+
+    const validationMessage = validateExaminerInvite({
+      name: payload.name ?? "",
+      email: payload.email ?? "",
+    });
+    if (validationMessage) {
+      return NextResponse.json({ ok: false, message: validationMessage }, { status: 400 });
+    }
+
+    const target = await getExaminerById(admin, payload.id);
+    if (!target.ok) return target.response;
+
+    const { error } = await admin.auth.admin.updateUserById(payload.id, {
+      email: normalizeEmail(payload.email ?? ""),
+      user_metadata: {
+        ...target.user.user_metadata,
+        name: (payload.name ?? "").trim(),
+        role: "examiner",
+        status: parseAccountStatus(target.user.user_metadata?.status),
+      },
+    });
+    if (error) return NextResponse.json({ ok: false, message: error.message }, { status: 502 });
+
+    return NextResponse.json({ ok: true, message: "Examiner details updated." });
   }
 
   if (payload.action === "enable" || payload.action === "disable") {
@@ -185,10 +216,11 @@ async function getExaminerById(admin: NonNullable<ReturnType<typeof getAdminClie
   return { ok: true as const, user: data.user };
 }
 
-function mapSupabaseExaminer(user: User): ManagedExaminer {
+function mapSupabaseUser(user: User): ManagedUser {
   const metadata = user.user_metadata ?? {};
   const email = normalizeEmail(user.email ?? "");
-  const fallbackName = email ? email.split("@")[0] : "Examiner";
+  const role = isMasterAdminEmail(email) ? "administrator" : parseRole(metadata.role);
+  const fallbackName = email ? email.split("@")[0] : "Talent Sprint User";
   const status =
     user.banned_until && new Date(user.banned_until).getTime() > Date.now()
       ? "disabled"
@@ -198,7 +230,7 @@ function mapSupabaseExaminer(user: User): ManagedExaminer {
     id: user.id,
     name: typeof metadata.name === "string" && metadata.name.trim() ? metadata.name : fallbackName,
     email,
-    role: "examiner",
+    role,
     status,
     createdAt: user.created_at,
     lastSignInAt: user.last_sign_in_at ?? undefined,

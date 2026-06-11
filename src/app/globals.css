@@ -1346,6 +1346,37 @@ input:focus-visible {
   gap: 1rem;
 }
 
+.admin-tabs {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.65rem;
+  margin-bottom: 1rem;
+}
+
+.admin-tabs button {
+  display: inline-flex;
+  min-height: 3rem;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  border: 1px solid var(--border-subtle);
+  border-radius: 0.65rem;
+  background: var(--bg-surface);
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-weight: 850;
+}
+
+.admin-tabs button.selected {
+  border-color: color-mix(in srgb, var(--brand-primary) 55%, var(--border-subtle));
+  background: var(--brand-primary);
+  color: #fff;
+}
+
+:root[data-theme="neon"] .admin-tabs button.selected {
+  color: #04111f;
+}
+
 .admin-access-grid {
   display: grid;
   grid-template-columns: minmax(0, 1.25fr) minmax(280px, 0.55fr);
@@ -1360,6 +1391,21 @@ input:focus-visible {
 .examiner-invite-form {
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
   align-items: end;
+}
+
+.examiner-edit-form {
+  border: 1px solid color-mix(in srgb, var(--brand-primary) 45%, var(--border-subtle));
+  border-radius: 0.7rem;
+  background: color-mix(in srgb, var(--brand-primary) 8%, var(--bg-surface));
+  padding: 0.9rem;
+}
+
+.compact-heading {
+  padding: 0;
+}
+
+.compact-heading h3 {
+  font-size: 1rem;
 }
 
 .examiner-list {
@@ -1940,6 +1986,10 @@ input:focus-visible {
   .stat-grid,
   .auth-grid,
   .assessment-question-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-tabs {
     grid-template-columns: 1fr;
   }
 
