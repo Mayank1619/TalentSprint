@@ -25,7 +25,10 @@ test("candidate can register and lands on practice", async ({ page }) => {
   await page.getByLabel("Full name").fill("New Candidate");
   await page.getByLabel("Email").fill(email);
   await page.getByLabel("Password", { exact: true }).fill("Password123!");
-  await page.getByLabel("Confirm password").fill("Password123!");
+  await expect(page.getByLabel("Password", { exact: true })).toHaveAttribute("type", "password");
+  await page.getByRole("button", { name: "Show password" }).click();
+  await expect(page.getByLabel("Password", { exact: true })).toHaveAttribute("type", "text");
+  await page.getByLabel("Confirm password", { exact: true }).fill("Password123!");
   await page.getByRole("button", { name: "Create candidate account" }).click();
 
   await expect(page).toHaveURL("/practice");
@@ -58,7 +61,7 @@ test("guest can practice with name and email for leaderboard", async ({ page }) 
 test("candidate login lands on practice", async ({ page }) => {
   await page.goto("/login");
   await page.getByLabel("Email").fill("candidate@talentsprint.dev");
-  await page.getByLabel("Password").fill("Password123!");
+  await page.getByLabel("Password", { exact: true }).fill("Password123!");
   await page.locator("form").getByRole("button", { name: "Log in" }).click();
 
   await expect(page).toHaveURL("/practice");
@@ -70,7 +73,7 @@ test("candidate login lands on practice", async ({ page }) => {
 test("examiner and administrator login land on their workspaces", async ({ page }) => {
   await page.goto("/login");
   await page.getByLabel("Email").fill("examiner@talentsprint.dev");
-  await page.getByLabel("Password").fill("Password123!");
+  await page.getByLabel("Password", { exact: true }).fill("Password123!");
   await page.locator("form").getByRole("button", { name: "Log in" }).click();
   await expect(page).toHaveURL("/examiner");
   await expect(page.getByRole("heading", { name: "Create tests, send invites, and review outcomes." })).toBeVisible();
@@ -79,7 +82,7 @@ test("examiner and administrator login land on their workspaces", async ({ page 
   await page.getByRole("button", { name: "Sign out" }).click();
   await page.goto("/login");
   await page.getByLabel("Email").fill("admin@talentsprint.dev");
-  await page.getByLabel("Password").fill("Password123!");
+  await page.getByLabel("Password", { exact: true }).fill("Password123!");
   await page.locator("form").getByRole("button", { name: "Log in" }).click();
   await expect(page).toHaveURL("/admin");
   await expect(page.getByRole("heading", { name: "Manage the question library and platform settings." })).toBeVisible();

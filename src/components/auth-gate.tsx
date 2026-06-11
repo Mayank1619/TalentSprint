@@ -44,7 +44,7 @@ export function AuthGate({
                   autoComplete="name"
                   name="guest-name"
                   onChange={(event) => setGuestName(event.target.value)}
-                  placeholder="Mayank Candidate"
+                  placeholder="Candidate Name"
                   required
                   type="text"
                   value={guestName}

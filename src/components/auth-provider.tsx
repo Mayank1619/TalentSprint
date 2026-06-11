@@ -76,10 +76,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       signIn: async (email: string, password: string) => {
         const supabase = getSupabaseClient();
         if (supabase) {
-          const { data, error } = await supabase.auth.signInWithPassword({
-            email: normalizeEmail(email),
-            password,
-          });
+          const { data, error } = await withAuthRequest(() =>
+            supabase.auth.signInWithPassword({
+              email: normalizeEmail(email),
+              password,
+            }),
+          );
 
           if (error || !data.user) {
             return { ok: false, message: error?.message ?? "Email or password is incorrect." };
@@ -119,16 +121,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const supabase = getSupabaseClient();
         if (supabase) {
           const email = normalizeEmail(input.email);
-          const { data, error } = await supabase.auth.signUp({
-            email,
-            password: input.password,
-            options: {
-              data: {
-                name: input.name.trim(),
-                role: "candidate",
+          const { data, error } = await withAuthRequest(() =>
+            supabase.auth.signUp({
+              email,
+              password: input.password,
+              options: {
+                data: {
+                  name: input.name.trim(),
+                  role: "candidate",
+                },
               },
-            },
-          });
+            }),
+          );
 
           if (error || !data.user) {
             return { ok: false, message: error?.message ?? "Unable to create account." };
@@ -289,6 +293,25 @@ function isGuestUser(value: DemoUser) {
 
 function slugify(value: string) {
   return value.replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "") || "candidate";
+}
+
+async function withAuthRequest<TResponse extends { data: unknown; error: { message: string } | null }>(
+  request: () => Promise<TResponse>,
+): Promise<TResponse> {
+  try {
+    return await request();
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unable to reach Supabase Auth.";
+    return {
+      data: {} as TResponse["data"],
+      error: {
+        message:
+          message === "Failed to fetch"
+            ? "Unable to reach Supabase Auth. Check your internet connection and try again."
+            : message,
+      },
+    } as TResponse;
+  }
 }
 
 function mapSupabaseUser(value: {

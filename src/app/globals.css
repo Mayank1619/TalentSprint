@@ -1279,13 +1279,20 @@ input:focus-visible {
   gap: 0.85rem;
 }
 
-.auth-form label {
+.auth-form label,
+.auth-field {
   display: grid;
   grid-template-columns: 1fr;
   gap: 0.4rem;
   color: var(--text-secondary);
   font-size: 0.88rem;
   font-weight: 800;
+}
+
+.auth-field label {
+  color: inherit;
+  font-size: inherit;
+  font-weight: inherit;
 }
 
 .auth-form input {
@@ -1297,6 +1304,37 @@ input:focus-visible {
   background: var(--bg-surface);
   color: var(--text-primary);
   padding: 0.72rem 0.85rem;
+}
+
+.password-field {
+  position: relative;
+  display: block;
+}
+
+.password-field input {
+  padding-right: 3rem;
+}
+
+.password-toggle {
+  position: absolute;
+  top: 50%;
+  right: 0.45rem;
+  display: inline-grid;
+  width: 2rem;
+  height: 2rem;
+  place-items: center;
+  border: 1px solid transparent;
+  border-radius: 0.5rem;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.password-toggle:hover,
+.password-toggle:focus-visible {
+  border-color: var(--border-subtle);
+  color: var(--text-primary);
+  outline: none;
 }
 
 .auth-message {

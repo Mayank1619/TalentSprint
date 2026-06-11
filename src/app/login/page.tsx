@@ -3,7 +3,7 @@
 import { FormEvent, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { LockKeyhole, ServerCog, UserPlus, UserRoundCheck } from "lucide-react";
+import { Eye, EyeOff, LockKeyhole, ServerCog, UserPlus, UserRoundCheck } from "lucide-react";
 import { useAuth } from "@/components/auth-provider";
 import { roleHomePath, roleLabel } from "@/lib/auth";
 
@@ -18,6 +18,9 @@ export default function LoginPage() {
   const [registerEmail, setRegisterEmail] = useState("");
   const [registerPassword, setRegisterPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [showLoginPassword, setShowLoginPassword] = useState(false);
+  const [showRegisterPassword, setShowRegisterPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   async function handleLogin(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -104,18 +107,29 @@ export default function LoginPage() {
                   value={loginEmail}
                 />
               </label>
-              <label>
-                Password
-                <input
-                  autoComplete="current-password"
-                  name="password"
-                  onChange={(event) => setLoginPassword(event.target.value)}
-                  placeholder="Password123!"
-                  required
-                  type="password"
-                  value={loginPassword}
-                />
-              </label>
+              <div className="auth-field">
+                <label htmlFor="login-password">Password</label>
+                <span className="password-field">
+                  <input
+                    autoComplete="current-password"
+                    id="login-password"
+                    name="password"
+                    onChange={(event) => setLoginPassword(event.target.value)}
+                    placeholder="Password123!"
+                    required
+                    type={showLoginPassword ? "text" : "password"}
+                    value={loginPassword}
+                  />
+                  <button
+                    aria-label={showLoginPassword ? "Hide password" : "Show password"}
+                    className="password-toggle"
+                    onClick={() => setShowLoginPassword((current) => !current)}
+                    type="button"
+                  >
+                    {showLoginPassword ? <EyeOff size={17} /> : <Eye size={17} />}
+                  </button>
+                </span>
+              </div>
               <button className="button primary" type="submit">
                 <UserRoundCheck size={18} /> Log in
               </button>
@@ -128,7 +142,7 @@ export default function LoginPage() {
                   autoComplete="name"
                   name="name"
                   onChange={(event) => setName(event.target.value)}
-                  placeholder="Mayank Candidate"
+                  placeholder="Candidate Name"
                   required
                   type="text"
                   value={name}
@@ -146,29 +160,51 @@ export default function LoginPage() {
                   value={registerEmail}
                 />
               </label>
-              <label>
-                Password
-                <input
-                  autoComplete="new-password"
-                  name="password"
-                  onChange={(event) => setRegisterPassword(event.target.value)}
-                  placeholder="At least 8 characters"
-                  required
-                  type="password"
-                  value={registerPassword}
-                />
-              </label>
-              <label>
-                Confirm password
-                <input
-                  autoComplete="new-password"
-                  name="confirm-password"
-                  onChange={(event) => setConfirmPassword(event.target.value)}
-                  required
-                  type="password"
-                  value={confirmPassword}
-                />
-              </label>
+              <div className="auth-field">
+                <label htmlFor="register-password">Password</label>
+                <span className="password-field">
+                  <input
+                    autoComplete="new-password"
+                    id="register-password"
+                    name="password"
+                    onChange={(event) => setRegisterPassword(event.target.value)}
+                    placeholder="At least 8 characters"
+                    required
+                    type={showRegisterPassword ? "text" : "password"}
+                    value={registerPassword}
+                  />
+                  <button
+                    aria-label={showRegisterPassword ? "Hide password" : "Show password"}
+                    className="password-toggle"
+                    onClick={() => setShowRegisterPassword((current) => !current)}
+                    type="button"
+                  >
+                    {showRegisterPassword ? <EyeOff size={17} /> : <Eye size={17} />}
+                  </button>
+                </span>
+              </div>
+              <div className="auth-field">
+                <label htmlFor="confirm-password">Confirm password</label>
+                <span className="password-field">
+                  <input
+                    autoComplete="new-password"
+                    id="confirm-password"
+                    name="confirm-password"
+                    onChange={(event) => setConfirmPassword(event.target.value)}
+                    required
+                    type={showConfirmPassword ? "text" : "password"}
+                    value={confirmPassword}
+                  />
+                  <button
+                    aria-label={showConfirmPassword ? "Hide confirm password" : "Show confirm password"}
+                    className="password-toggle"
+                    onClick={() => setShowConfirmPassword((current) => !current)}
+                    type="button"
+                  >
+                    {showConfirmPassword ? <EyeOff size={17} /> : <Eye size={17} />}
+                  </button>
+                </span>
+              </div>
               <button className="button primary" type="submit">
                 <UserPlus size={18} /> Create candidate account
               </button>
