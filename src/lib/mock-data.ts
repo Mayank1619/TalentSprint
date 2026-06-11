@@ -23,6 +23,15 @@ export type Question = {
   hiddenTests: number;
 };
 
+type QuestionDefinition = Omit<Question, "starterCode"> & {
+  returnType?: "array" | "boolean" | "number" | "string";
+};
+
+export type QuestionBankSection = {
+  category: string;
+  targetCount: number;
+};
+
 export type PracticeLeaderboardEntry = {
   rank: number;
   candidateName: string;
@@ -175,9 +184,7 @@ const seedQuestions: Question[] = [
   }),
 ];
 
-const generatedQuestionDefinitions: Array<
-  Omit<Question, "starterCode"> & { returnType?: "array" | "boolean" | "number" | "string" }
-> = [
+const generatedQuestionDefinitions: QuestionDefinition[] = [
   {
     id: "merge-intervals",
     title: "Merge Intervals",
@@ -1140,9 +1147,20 @@ const generatedQuestionDefinitions: Array<
   },
 ];
 
+export const questionBankTargets: QuestionBankSection[] = [
+  { category: "Java", targetCount: 100 },
+  { category: "Python", targetCount: 100 },
+  { category: "C#", targetCount: 100 },
+  { category: "Algorithms", targetCount: 100 },
+  { category: "Data Structures", targetCount: 100 },
+];
+
+const bulkQuestionDefinitions = buildBulkQuestionDefinitions();
+
 export const questions: Question[] = [
   ...seedQuestions,
   ...generatedQuestionDefinitions.map((definition) => makeQuestion(definition)),
+  ...bulkQuestionDefinitions.map((definition) => makeQuestion(definition)),
 ];
 
 export const practiceQuestions = questions.filter((question) => question.visibility !== "assessment");
@@ -1369,9 +1387,152 @@ export function getDetailedReport(candidateId: string) {
   return detailedReports.find((report) => report.candidateId === candidateId) ?? detailedReports[0];
 }
 
-type QuestionDefinition = Omit<Question, "starterCode"> & {
-  returnType?: "array" | "boolean" | "number" | "string";
-};
+function buildBulkQuestionDefinitions(): QuestionDefinition[] {
+  const scenarios = [
+    "candidate evaluation workflow",
+    "consultant onboarding dataset",
+    "assessment scoring service",
+    "project staffing dashboard",
+    "technical interview review",
+    "training progress tracker",
+    "code quality audit",
+    "delivery readiness checklist",
+    "skill gap analysis",
+    "team allocation planner",
+  ];
+  const returnTypes: NonNullable<QuestionDefinition["returnType"]>[] = [
+    "array",
+    "boolean",
+    "number",
+    "string",
+  ];
+  const difficulties: Question["difficulty"][] = ["Easy", "Medium", "Medium", "Hard"];
+  const visibilityCycle: QuestionVisibility[] = ["practice", "both", "assessment", "both"];
+  const sections = [
+    {
+      category: "Java",
+      topics: [
+        "OOP",
+        "Abstraction",
+        "Streams",
+        "Lambdas",
+        "Generics",
+        "Collections",
+        "Multithreading",
+        "Concurrency",
+        "Exceptions",
+        "Optionals",
+      ],
+      verbs: ["model", "aggregate", "transform", "validate", "coordinate"],
+    },
+    {
+      category: "Python",
+      topics: [
+        "OOP",
+        "Abstraction",
+        "Lambdas",
+        "Type Hints",
+        "Collections",
+        "Iterators",
+        "Asyncio",
+        "Threads",
+        "Dataclasses",
+        "Decorators",
+      ],
+      verbs: ["normalize", "compose", "stream", "validate", "summarize"],
+    },
+    {
+      category: "C#",
+      topics: [
+        "OOP",
+        "Abstraction",
+        "LINQ",
+        "Lambdas",
+        "Generics",
+        "Collections",
+        "Threading",
+        "Concurrency",
+        "Async Await",
+        "Interfaces",
+      ],
+      verbs: ["project", "filter", "compose", "validate", "coordinate"],
+    },
+    {
+      category: "Algorithms",
+      topics: [
+        "Sorting",
+        "Searching",
+        "Recursion",
+        "Dynamic Programming",
+        "Greedy",
+        "Backtracking",
+        "Strings",
+        "Bit Manipulation",
+        "Math",
+        "Sliding Window",
+      ],
+      verbs: ["optimize", "rank", "partition", "search", "schedule"],
+    },
+    {
+      category: "Data Structures",
+      topics: [
+        "Arrays",
+        "Hash Map",
+        "Stack",
+        "Queue",
+        "Linked List",
+        "Trees",
+        "Graphs",
+        "Heap",
+        "Trie",
+        "Sets",
+      ],
+      verbs: ["index", "merge", "traverse", "rebalance", "deduplicate"],
+    },
+  ];
+
+  return sections.flatMap((section) =>
+    Array.from({ length: 100 }, (_, index) => {
+      const topic = section.topics[index % section.topics.length];
+      const scenario = scenarios[index % scenarios.length];
+      const verb = section.verbs[index % section.verbs.length];
+      const difficulty = difficulties[index % difficulties.length];
+      const questionNumber = (index + 1).toString().padStart(3, "0");
+      const normalizedTopic = topic.toLowerCase().replaceAll(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+      const normalizedCategory = section.category
+        .toLowerCase()
+        .replace("#", "sharp")
+        .replaceAll(/[^a-z0-9]+/g, "-")
+        .replace(/^-|-$/g, "");
+      const returnType = returnTypes[index % returnTypes.length];
+
+      return {
+        id: `${normalizedCategory}-${normalizedTopic}-sprint-${questionNumber}`,
+        title: `${section.category} ${topic} Sprint ${questionNumber}`,
+        difficulty,
+        category: section.category,
+        tags: [section.category, topic, scenarioTitle(scenario)],
+        visibility: visibilityCycle[index % visibilityCycle.length],
+        estimatedMinutes: difficulty === "Hard" ? 32 : difficulty === "Medium" ? 22 : 14,
+        points: difficulty === "Hard" ? 90 : difficulty === "Medium" ? 60 : 35,
+        prompt: `Use ${section.category} ${topic} techniques to ${verb} a ${scenario}. Return the requested result while handling empty input, duplicates, and boundary values.`,
+        sampleTests: [
+          `${scenario}: standard input -> expected ${returnType} result`,
+          `${scenario}: empty or duplicate values -> graceful output`,
+        ],
+        hiddenTests: difficulty === "Hard" ? 12 : difficulty === "Medium" ? 8 : 5,
+        returnType,
+      };
+    }),
+  );
+}
+
+function scenarioTitle(value: string) {
+  return value
+    .split(" ")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
+}
 
 function makeQuestion(definition: QuestionDefinition): Question {
   const returnType = definition.returnType ?? "array";

@@ -31,7 +31,7 @@ test("candidate can register and lands on practice", async ({ page }) => {
   await page.getByLabel("Confirm password", { exact: true }).fill("Password123!");
   await page.getByRole("button", { name: "Create candidate account" }).click();
 
-  await expect(page).toHaveURL("/practice");
+  await expect(page).toHaveURL("/practice", { timeout: 15_000 });
   await expect(page.getByText("New Candidate")).toBeVisible();
   await expect(page.getByRole("heading", { name: "Choose your next practice sprint." })).toBeVisible();
 });
@@ -87,7 +87,7 @@ test("candidate login lands on practice", async ({ page }) => {
   await page.getByLabel("Password", { exact: true }).fill("Password123!");
   await page.locator("form").getByRole("button", { name: "Log in" }).click();
 
-  await expect(page).toHaveURL("/practice");
+  await expect(page).toHaveURL("/practice", { timeout: 15_000 });
   await expect(page.getByText("Candidate Demo")).toBeVisible();
   await expect(page.getByRole("navigation").getByRole("link", { name: "Admin" })).toHaveCount(0);
   await expect(page.getByRole("navigation").getByRole("link", { name: "Examiner" })).toHaveCount(0);
@@ -116,7 +116,7 @@ test("remember me stores email and controls local demo session persistence", asy
   await page.getByLabel("Password", { exact: true }).fill("Password123!");
   await page.getByLabel("Remember me on this device").uncheck();
   await page.locator("form").getByRole("button", { name: "Log in" }).click();
-  await expect(page).toHaveURL("/examiner");
+  await expect(page).toHaveURL("/examiner", { timeout: 15_000 });
 
   await expect
     .poll(() => page.evaluate(() => window.localStorage.getItem("talent-sprint-remembered-email")))

@@ -13,8 +13,10 @@ test("candidate starts a timed assessment, switches questions, submits, and open
   await page.goto("/assessment");
 
   await expect(page.getByRole("heading", { name: "Consultant Core Coding Screen" })).toBeVisible();
-  await page.getByRole("button", { name: "Start assessment" }).click();
+  await expect(page.getByRole("button", { name: "Start in fullscreen" })).toBeVisible();
+  await page.getByRole("button", { name: "Start without fullscreen" }).click();
   await expect(page.getByText("remaining")).toBeVisible();
+  await expect(page.getByText("Fullscreen inactive")).toBeVisible();
 
   await page.getByRole("button", { name: "Q2" }).click();
   await expect(page.getByRole("heading", { name: "Try: Valid Parentheses" })).toHaveCount(0);

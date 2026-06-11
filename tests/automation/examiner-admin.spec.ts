@@ -60,7 +60,7 @@ test("examiner configures automatic completion report emails for a test", async 
   await expect(page.getByText("Candidate email on")).toBeVisible();
   await expect(page.getByText("examiner email on")).toBeVisible();
 
-  await page.getByRole("button", { name: "Start assessment" }).click();
+  await page.getByRole("button", { name: "Start without fullscreen" }).click();
   await page.getByRole("button", { name: "Submit" }).click();
 
   await expect(page.getByText("Candidate report email: mock Email rendered in mock mode.")).toBeVisible();

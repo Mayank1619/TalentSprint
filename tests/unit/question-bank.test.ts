@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { assessmentQuestions, practiceLeaderboard, practiceQuestions, questions } from "@/lib/mock-data";
+import {
+  assessmentQuestions,
+  practiceLeaderboard,
+  practiceQuestions,
+  questionBankTargets,
+  questions,
+} from "@/lib/mock-data";
 
 describe("question bank visibility", () => {
   it("keeps assessment-only questions out of practice", () => {
@@ -13,8 +19,15 @@ describe("question bank visibility", () => {
   });
 
   it("contains a large mixed bank and leaderboard", () => {
-    expect(questions.length).toBeGreaterThanOrEqual(65);
+    expect(questions.length).toBeGreaterThanOrEqual(565);
     expect(practiceLeaderboard[0].rank).toBe(1);
+  });
+
+  it("starts each major section with roughly 100 questions", () => {
+    for (const target of questionBankTargets) {
+      const sectionQuestions = questions.filter((question) => question.category === target.category);
+      expect(sectionQuestions.length).toBeGreaterThanOrEqual(target.targetCount);
+    }
   });
 
   it("covers language-depth consultant skills across Java, Python, and C#", () => {

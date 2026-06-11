@@ -19,12 +19,31 @@ export function ExaminerAssessmentBuilder() {
   const [candidateEmailText, setCandidateEmailText] = useState(() =>
     loadAssessmentEmailSettings().candidateEmails.join("\n"),
   );
+  const [selectedCategory, setSelectedCategory] = useState("All");
+  const [searchTerm, setSearchTerm] = useState("");
   const [message, setMessage] = useState<string | null>(null);
 
   const selectedQuestions = useMemo(
     () => assessmentQuestions.filter((question) => settings.questionIds.includes(question.id)),
     [settings.questionIds],
   );
+  const categories = useMemo(
+    () => ["All", ...Array.from(new Set(assessmentQuestions.map((question) => question.category)))],
+    [],
+  );
+  const visibleQuestions = useMemo(() => {
+    const normalizedSearch = searchTerm.trim().toLowerCase();
+    return assessmentQuestions
+      .filter((question) => selectedCategory === "All" || question.category === selectedCategory)
+      .filter((question) => {
+        if (!normalizedSearch) return true;
+        return [question.title, question.category, ...question.tags]
+          .join(" ")
+          .toLowerCase()
+          .includes(normalizedSearch);
+      })
+      .slice(0, 60);
+  }, [searchTerm, selectedCategory]);
 
   function toggleQuestion(questionId: string) {
     setMessage(null);
@@ -154,11 +173,34 @@ export function ExaminerAssessmentBuilder() {
       <div className="builder-heading compact">
         <div>
           <h3>Question set</h3>
-          <p>{selectedQuestions.length} selected for the candidate test.</p>
+          <p>
+            {selectedQuestions.length} selected for the candidate test. Showing {visibleQuestions.length} of{" "}
+            {assessmentQuestions.length} assessment-enabled questions.
+          </p>
         </div>
       </div>
+      <div className="builder-grid">
+        <label className="form-field">
+          <span>Question category</span>
+          <select value={selectedCategory} onChange={(event) => setSelectedCategory(event.target.value)}>
+            {categories.map((category) => (
+              <option key={category} value={category}>
+                {category}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="form-field">
+          <span>Search title or tag</span>
+          <input
+            placeholder="Streams, Graphs, LINQ, OOP..."
+            value={searchTerm}
+            onChange={(event) => setSearchTerm(event.target.value)}
+          />
+        </label>
+      </div>
       <div className="assessment-question-grid">
-        {assessmentQuestions.slice(0, 8).map((question) => {
+        {visibleQuestions.map((question) => {
           const selected = settings.questionIds.includes(question.id);
           return (
             <button

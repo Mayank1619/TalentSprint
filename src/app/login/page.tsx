@@ -29,7 +29,7 @@ export default function LoginPage() {
   useEffect(() => {
     const frameId = window.requestAnimationFrame(() => {
       setRememberMe(getRememberMePreference());
-      setLoginEmail(getRememberedEmail());
+      setLoginEmail((current) => current || getRememberedEmail());
     });
 
     return () => window.cancelAnimationFrame(frameId);

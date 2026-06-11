@@ -9,6 +9,8 @@ import { canAccess, roleLabel, type Role } from "@/lib/auth";
 
 const navItems: Array<{ href: string; label: string; allowedRoles?: Role[] }> = [
   { href: "/", label: "Home" },
+  { href: "/about", label: "About" },
+  { href: "/docs", label: "Docs" },
   { href: "/practice", label: "Practice", allowedRoles: ["candidate"] },
   { href: "/leaderboard", label: "Leaderboard", allowedRoles: ["candidate", "administrator"] },
   { href: "/assessment", label: "Assessment", allowedRoles: ["candidate"] },
