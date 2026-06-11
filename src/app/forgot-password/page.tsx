@@ -26,7 +26,7 @@ export default function ForgotPasswordPage() {
 
       <section className="auth-layout compact-auth-layout">
         <div className="auth-panel">
-          <form className="auth-form" onSubmit={handleSubmit}>
+          <form className="auth-form" method="post" onSubmit={handleSubmit}>
             <label>
               Email
               <input

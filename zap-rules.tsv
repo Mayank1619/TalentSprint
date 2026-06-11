@@ -1,0 +1,4 @@
+10049	IGNORE	Non-storable content is expected for dynamic Next.js pages and 404 probes in the baseline crawl.
+10094	IGNORE	Base64 disclosure is noisy for bundled Next.js assets and CSS data values; secret scanning covers real credential leakage.
+10111	IGNORE	Authentication form detection is informational and expected on the login page.
+90005	IGNORE	Sec-Fetch-* request headers are browser/client supplied and are not controllable response headers.

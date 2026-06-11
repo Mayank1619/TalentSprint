@@ -94,7 +94,7 @@ export default function LoginPage() {
           </div>
 
           {mode === "login" ? (
-            <form className="auth-form" onSubmit={handleLogin}>
+            <form className="auth-form" method="post" onSubmit={handleLogin}>
               <label>
                 Email
                 <input
@@ -138,7 +138,7 @@ export default function LoginPage() {
               </button>
             </form>
           ) : (
-            <form className="auth-form" onSubmit={handleRegister}>
+            <form className="auth-form" method="post" onSubmit={handleRegister}>
               <label>
                 Full name
                 <input

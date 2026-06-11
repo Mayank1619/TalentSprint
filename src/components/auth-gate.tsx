@@ -37,7 +37,7 @@ export function AuthGate({
           <p>{description}</p>
 
           {canUseGuestPractice && (
-            <form className="auth-form guest-practice-form" onSubmit={handleGuestPractice}>
+            <form className="auth-form guest-practice-form" method="post" onSubmit={handleGuestPractice}>
               <label>
                 Name for leaderboard
                 <input

@@ -29,7 +29,7 @@ export default function ResetPasswordPage() {
 
       <section className="auth-layout compact-auth-layout">
         <div className="auth-panel">
-          <form className="auth-form" onSubmit={handleSubmit}>
+          <form className="auth-form" method="post" onSubmit={handleSubmit}>
             <div className="auth-field">
               <label htmlFor="new-password">New password</label>
               <span className="password-field">

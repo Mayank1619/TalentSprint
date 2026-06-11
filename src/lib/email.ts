@@ -1,3 +1,4 @@
+import escapeHtml from "escape-html";
 import { getDetailedReport, questions, type DetailedReport } from "@/lib/mock-data";
 
 export type EmailKind = "candidate-report" | "examiner-report" | "question-set";
@@ -157,13 +158,4 @@ function shell(content: string) {
       <p style="color:#6b7280">Sent by Talent Sprint.</p>
     </div>
   `;
-}
-
-function escapeHtml(value: string) {
-  return value
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#039;");
 }
