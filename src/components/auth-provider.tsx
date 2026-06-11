@@ -17,7 +17,7 @@ import {
 } from "@/lib/auth";
 import { getSupabaseClient, isSupabaseConfigured } from "@/lib/supabase-client";
 
-type AuthResult = {
+export type AuthResult = {
   ok: boolean;
   message: string;
   redirectTo?: string;
@@ -25,6 +25,7 @@ type AuthResult = {
 
 type AuthContextValue = {
   user: DemoUser | null;
+  isLoading: boolean;
   authMode: AuthMode;
   accounts: StoredAccount[];
   signIn: (email: string, password: string) => Promise<AuthResult>;
@@ -39,26 +40,44 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<DemoUser | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const [accounts, setAccounts] = useState<StoredAccount[]>([]);
   const authMode: AuthMode = isSupabaseConfigured() ? "supabase" : "local";
 
   useEffect(() => {
+    let isMounted = true;
     const supabase = getSupabaseClient();
     if (supabase) {
-      supabase.auth.getSession().then(({ data }) => {
-        setUser(data.session?.user ? mapSupabaseUser(data.session.user) : loadCurrentGuest());
-      });
+      supabase.auth
+        .getSession()
+        .then(({ data }) => {
+          if (!isMounted) return;
+          setUser(data.session?.user ? mapSupabaseUser(data.session.user) : loadCurrentGuest());
+        })
+        .catch(() => {
+          if (!isMounted) return;
+          setUser(loadCurrentGuest());
+        })
+        .finally(() => {
+          if (isMounted) setIsLoading(false);
+        });
 
       const {
         data: { subscription },
       } = supabase.auth.onAuthStateChange((_event, session) => {
+        if (!isMounted) return;
         setUser(session?.user ? mapSupabaseUser(session.user) : loadCurrentGuest());
+        setIsLoading(false);
       });
 
-      return () => subscription.unsubscribe();
+      return () => {
+        isMounted = false;
+        subscription.unsubscribe();
+      };
     }
 
     window.requestAnimationFrame(() => {
+      if (!isMounted) return;
       const nextAccounts = loadAccounts();
       const storedUserId = window.localStorage.getItem(authStorageKeys.user);
       const storedGuest = loadGuest();
@@ -67,12 +86,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         (storedGuest?.id === storedUserId ? storedGuest : null);
       setAccounts(nextAccounts);
       setUser(storedUser);
+      setIsLoading(false);
     });
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   const value = useMemo(
     () => ({
       user,
+      isLoading,
       authMode,
       accounts,
       signIn: async (email: string, password: string) => {
@@ -254,7 +279,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(null);
       },
     }),
-    [accounts, authMode, user],
+    [accounts, authMode, isLoading, user],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -3,17 +3,19 @@
 import { FormEvent, useState } from "react";
 import Link from "next/link";
 import { Mail, Send } from "lucide-react";
+import { AuthNotice } from "@/components/auth-notice";
+import type { AuthResult } from "@/components/auth-provider";
 import { useAuth } from "@/components/auth-provider";
 
 export default function ForgotPasswordPage() {
   const { requestPasswordReset } = useAuth();
   const [email, setEmail] = useState("");
-  const [message, setMessage] = useState<string | null>(null);
+  const [notice, setNotice] = useState<AuthResult | null>(null);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const result = await requestPasswordReset(email);
-    setMessage(result.message);
+    setNotice(result);
   }
 
   return (
@@ -42,7 +44,7 @@ export default function ForgotPasswordPage() {
             <button className="button primary" type="submit">
               <Send size={18} /> Send reset link
             </button>
-            {message && <div className="auth-message">{message}</div>}
+            <AuthNotice notice={notice} />
           </form>
         </div>
 

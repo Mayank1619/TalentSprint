@@ -1510,6 +1510,52 @@ input:focus-visible {
   padding: 0.8rem;
 }
 
+.auth-notice {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 0.65rem;
+  align-items: start;
+  border: 1px solid var(--border-subtle);
+  border-left-width: 0.35rem;
+  border-radius: 0.68rem;
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+  font-weight: 760;
+  line-height: 1.45;
+  padding: 0.82rem 0.9rem;
+}
+
+.auth-notice svg {
+  margin-top: 0.08rem;
+}
+
+.auth-notice.success {
+  border-color: color-mix(in srgb, var(--success) 55%, var(--border-subtle));
+  background: color-mix(in srgb, var(--success) 13%, var(--bg-surface));
+}
+
+.auth-notice.success svg {
+  color: var(--success);
+}
+
+.auth-notice.error {
+  border-color: color-mix(in srgb, var(--error) 60%, var(--border-subtle));
+  background: color-mix(in srgb, var(--error) 12%, var(--bg-surface));
+}
+
+.auth-notice.error svg {
+  color: var(--error);
+}
+
+.auth-notice.info {
+  border-color: color-mix(in srgb, var(--brand-primary) 48%, var(--border-subtle));
+  background: color-mix(in srgb, var(--brand-primary) 10%, var(--bg-surface));
+}
+
+.auth-notice.info svg {
+  color: var(--brand-primary);
+}
+
 .auth-secondary-link {
   width: fit-content;
 }

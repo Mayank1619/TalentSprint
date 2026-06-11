@@ -20,9 +20,9 @@ export function TopNav() {
   const pathname = usePathname();
   const router = useRouter();
   const { theme, toggleTheme } = useTheme();
-  const { user, signOut } = useAuth();
-  const handleSignOut = () => {
-    signOut();
+  const { user, isLoading, signOut } = useAuth();
+  const handleSignOut = async () => {
+    await signOut();
     router.push("/");
   };
 
@@ -48,7 +48,12 @@ export function TopNav() {
           ))}
       </nav>
       <div className="nav-actions">
-        {user ? (
+        {isLoading ? (
+          <span className="user-chip loading">
+            Checking session
+            <small>Please wait</small>
+          </span>
+        ) : user ? (
           <>
             <span className="user-chip">
               {user.name}

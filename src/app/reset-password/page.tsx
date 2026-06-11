@@ -3,6 +3,8 @@
 import { FormEvent, useState } from "react";
 import Link from "next/link";
 import { Eye, EyeOff, KeyRound, Save } from "lucide-react";
+import { AuthNotice } from "@/components/auth-notice";
+import type { AuthResult } from "@/components/auth-provider";
 import { useAuth } from "@/components/auth-provider";
 
 export default function ResetPasswordPage() {
@@ -11,12 +13,12 @@ export default function ResetPasswordPage() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [message, setMessage] = useState<string | null>(null);
+  const [notice, setNotice] = useState<AuthResult | null>(null);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const result = await updatePassword(password, confirmPassword);
-    setMessage(result.message);
+    setNotice(result);
   }
 
   return (
@@ -79,7 +81,7 @@ export default function ResetPasswordPage() {
             <button className="button primary" type="submit">
               <Save size={18} /> Update password
             </button>
-            {message && <div className="auth-message">{message}</div>}
+            <AuthNotice notice={notice} />
           </form>
         </div>
 

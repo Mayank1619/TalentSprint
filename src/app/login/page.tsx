@@ -4,6 +4,8 @@ import { FormEvent, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Eye, EyeOff, LockKeyhole, ServerCog, UserPlus, UserRoundCheck } from "lucide-react";
+import { AuthNotice } from "@/components/auth-notice";
+import type { AuthResult } from "@/components/auth-provider";
 import { useAuth } from "@/components/auth-provider";
 import { roleHomePath, roleLabel } from "@/lib/auth";
 
@@ -11,7 +13,7 @@ export default function LoginPage() {
   const router = useRouter();
   const { authMode, user, signIn, signOut, registerCandidate } = useAuth();
   const [mode, setMode] = useState<"login" | "register">("login");
-  const [message, setMessage] = useState<string | null>(null);
+  const [notice, setNotice] = useState<AuthResult | null>(null);
   const [loginEmail, setLoginEmail] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
   const [name, setName] = useState("");
@@ -25,7 +27,7 @@ export default function LoginPage() {
   async function handleLogin(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const result = await signIn(loginEmail, loginPassword);
-    setMessage(result.message);
+    setNotice(result);
     if (result.ok && result.redirectTo) {
       router.push(result.redirectTo);
     }
@@ -39,7 +41,7 @@ export default function LoginPage() {
       password: registerPassword,
       confirmPassword,
     });
-    setMessage(result.message);
+    setNotice(result);
     if (result.ok && result.redirectTo) {
       router.push(result.redirectTo);
     }
@@ -75,7 +77,7 @@ export default function LoginPage() {
               className={mode === "login" ? "selected" : ""}
               onClick={() => {
                 setMode("login");
-                setMessage(null);
+                setNotice(null);
               }}
               type="button"
             >
@@ -85,13 +87,15 @@ export default function LoginPage() {
               className={mode === "register" ? "selected" : ""}
               onClick={() => {
                 setMode("register");
-                setMessage(null);
+                setNotice(null);
               }}
               type="button"
             >
               <UserPlus size={16} /> Register
             </button>
           </div>
+
+          <AuthNotice notice={notice} />
 
           {mode === "login" ? (
             <form className="auth-form" method="post" onSubmit={handleLogin}>
@@ -213,8 +217,6 @@ export default function LoginPage() {
               </button>
             </form>
           )}
-
-          {message && <div className="auth-message">{message}</div>}
         </div>
 
         <aside className="system-card auth-helper">

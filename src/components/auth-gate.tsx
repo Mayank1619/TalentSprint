@@ -3,6 +3,7 @@
 import { FormEvent, useState } from "react";
 import Link from "next/link";
 import { LockKeyhole, PlayCircle, UserPlus } from "lucide-react";
+import { AuthInfoNotice, AuthNotice } from "@/components/auth-notice";
 import { useAuth } from "@/components/auth-provider";
 import { canAccess, roleLabel, type Role } from "@/lib/auth";
 
@@ -15,17 +16,30 @@ export function AuthGate({
   children: React.ReactNode;
   description: string;
 }) {
-  const { user, startGuestPractice } = useAuth();
+  const { user, isLoading, startGuestPractice } = useAuth();
   const [guestName, setGuestName] = useState("");
   const [guestEmail, setGuestEmail] = useState("");
-  const [message, setMessage] = useState<string | null>(null);
+  const [notice, setNotice] = useState<{ ok: boolean; message: string } | null>(null);
   const canUseGuestPractice =
     allowedRoles.length === 1 && allowedRoles.includes("candidate") && description.toLowerCase().includes("practice");
 
   async function handleGuestPractice(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const result = await startGuestPractice({ name: guestName, email: guestEmail });
-    setMessage(result.message);
+    setNotice(result);
+  }
+
+  if (isLoading) {
+    return (
+      <main className="page-shell">
+        <section className="access-card">
+          <LockKeyhole />
+          <h1>Checking your session</h1>
+          <p>Talent Sprint is confirming your current sign-in before opening this workspace.</p>
+          <AuthInfoNotice message="This should only take a moment." />
+        </section>
+      </main>
+    );
   }
 
   if (!user) {
@@ -65,7 +79,7 @@ export function AuthGate({
               <button className="button primary" type="submit">
                 <PlayCircle size={18} /> Practice as guest
               </button>
-              {message && <div className="auth-message">{message}</div>}
+              <AuthNotice notice={notice} />
             </form>
           )}
 
