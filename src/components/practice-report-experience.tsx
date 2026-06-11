@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useMemo } from "react";
-import { ArrowLeft, BarChart3, CheckCircle2, Clock3, Medal, RotateCcw } from "lucide-react";
+import { ArrowLeft, BarChart3, CheckCircle2, Clock3, Gauge, Medal, RotateCcw } from "lucide-react";
 import { useAuth } from "@/components/auth-provider";
 import { formatDuration, getLatestAttempt } from "@/lib/attempt-store";
 import type { Question } from "@/lib/mock-data";
@@ -81,6 +81,11 @@ export function PracticeReportExperience({ question }: { question: Question }) {
           <span>{rankDelta}</span>
           <p>Leaderboard movement</p>
         </article>
+        <article>
+          <Gauge />
+          <span>{result.complexityLabel}</span>
+          <p>Estimated complexity</p>
+        </article>
       </section>
 
       <section className="report-summary">
@@ -100,13 +105,14 @@ export function PracticeReportExperience({ question }: { question: Question }) {
             {attempt.language} · {result.provider} · {result.passed}/{result.total} checks passed.
           </p>
           <p>Correctness score: {result.correctnessScore}%.</p>
+          <p>Code quality score: {result.codeQualityScore}%.</p>
+          <p>Complexity score: {result.complexityScore}%.</p>
         </article>
         <article>
-          <h2>Next step</h2>
-          <p>
-            Review failed visible cases, adjust your solution, and submit again. The leaderboard uses
-            your best real submitted score.
-          </p>
+          <h2>Complexity notes</h2>
+          {result.complexityNotes.slice(0, 3).map((note) => (
+            <p key={note}>{note}</p>
+          ))}
         </article>
       </section>
 

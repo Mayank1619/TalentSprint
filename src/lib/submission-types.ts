@@ -20,6 +20,10 @@ export type EvaluationResult = {
   hiddenTotal: number;
   score: number;
   correctnessScore: number;
+  codeQualityScore: number;
+  complexityScore: number;
+  complexityLabel: string;
+  complexityNotes: string[];
   timeBonus: number;
   timeTakenLabel?: string;
   status: "passed" | "partial" | "failed";

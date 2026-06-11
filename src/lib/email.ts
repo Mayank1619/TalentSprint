@@ -105,6 +105,16 @@ function buildCandidateReportEmail(report: DetailedReport) {
       <p><strong>Score:</strong> ${report.score}%</p>
       <p><strong>Submitted:</strong> ${escapeHtml(report.submittedAt)}</p>
       <p>${escapeHtml(report.summary)}</p>
+      <h2>Quality and complexity summary</h2>
+      ${report.questions
+        .map(
+          (question) => `
+            <p><strong>${escapeHtml(question.title)}:</strong> code quality ${
+              question.codeQualityScore
+            }%, complexity ${escapeHtml(question.complexityLabel)} (${question.complexityScore}%).</p>
+          `,
+        )
+        .join("")}
       <p>This summary does not include hidden test details. The examiner has access to the detailed review.</p>
     `),
   };
@@ -127,6 +137,9 @@ function buildExaminerReportEmail(report: DetailedReport) {
             <section>
               <h2>${escapeHtml(question.title)} - ${question.score}/${question.maxScore}</h2>
               <p>${question.visiblePassed}/${question.visibleTotal} visible tests passed, ${question.hiddenPassed}/${question.hiddenTotal} hidden tests passed.</p>
+              <p><strong>Code quality:</strong> ${question.codeQualityScore}%</p>
+              <p><strong>Estimated time complexity:</strong> ${escapeHtml(question.complexityLabel)} (${question.complexityScore}%)</p>
+              <p>${question.complexityNotes.map(escapeHtml).join(" ")}</p>
               <pre>${escapeHtml(question.submittedCode)}</pre>
             </section>
           `,

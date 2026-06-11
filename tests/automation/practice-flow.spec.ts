@@ -25,11 +25,14 @@ test("candidate selects a practice question, submits, reviews report, opens lead
 
   await page.getByRole("button", { name: "Run samples" }).click();
   await expect(page.getByText("samples passed")).toBeVisible();
+  await expect(page.getByText("Estimated complexity:")).toBeVisible();
 
   await page.getByRole("button", { name: "Submit" }).click();
   await expect(page).toHaveURL("/practice/first-non-repeating-character/report", { timeout: 15_000 });
   await expect(page.getByText("Practice report")).toBeVisible();
   await expect(page.getByText("Practice score")).toBeVisible();
+  await expect(page.getByText("Estimated complexity")).toBeVisible();
+  await expect(page.getByText("Code quality score").first()).toBeVisible();
   await expect(page.getByText("Generated from your latest submission")).toBeVisible();
 
   await page.locator(".report-actions").getByRole("link", { name: "Leaderboard" }).click();
@@ -65,6 +68,7 @@ test("practice timer counts down and auto-submits when time expires", async ({ p
   await expect(page).toHaveURL("/practice/pair-sum/report");
   await expect(page.getByText("Practice report")).toBeVisible();
   await expect(page.getByText("Practice score")).toBeVisible();
+  await expect(page.getByText("Estimated complexity")).toBeVisible();
 });
 
 test("empty starter code fails instead of passing", async ({ page }) => {

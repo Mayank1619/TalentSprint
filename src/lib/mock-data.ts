@@ -53,6 +53,10 @@ export type ReportQuestion = {
   score: number;
   maxScore: number;
   submittedCode: string;
+  codeQualityScore: number;
+  complexityScore: number;
+  complexityLabel: string;
+  complexityNotes: string[];
   visiblePassed: number;
   visibleTotal: number;
   hiddenPassed: number;
@@ -1295,6 +1299,14 @@ export const detailedReports: DetailedReport[] = [
         language: "Python",
         score: 48,
         maxScore: 50,
+        codeQualityScore: 88,
+        complexityScore: 94,
+        complexityLabel: "O(n)",
+        complexityNotes: [
+          "Estimated time complexity: O(n).",
+          "Uses lookup-style data structures for a single-pass solution.",
+          "Code is compact and readable with clear variable names.",
+        ],
         submittedCode: `def pair_sum(nums, target):
     seen = {}
     for index, value in enumerate(nums):
@@ -1320,6 +1332,14 @@ export const detailedReports: DetailedReport[] = [
         language: "Python",
         score: 38,
         maxScore: 50,
+        codeQualityScore: 81,
+        complexityScore: 90,
+        complexityLabel: "O(n)",
+        complexityNotes: [
+          "Estimated time complexity: O(n).",
+          "Stack-based parsing gives linear scanning behavior.",
+          "Add stronger guards for ignored characters and unusual input.",
+        ],
         submittedCode: `def is_valid(text):
     stack = []
     pairs = {')': '(', ']': '[', '}': '{'}

@@ -11,6 +11,8 @@ describe("evaluateCode", () => {
     expect(result.score).toBe(0);
     expect(result.status).toBe("failed");
     expect(result.visiblePassed).toBe(0);
+    expect(result.codeQualityScore).toBeGreaterThanOrEqual(0);
+    expect(result.complexityLabel).toMatch(/^O\(/);
   });
 
   it("scores implemented submissions from configured checks", () => {
@@ -22,6 +24,9 @@ describe("evaluateCode", () => {
 
     expect(result.total).toBe(4);
     expect(result.correctnessScore).toBeGreaterThan(0);
+    expect(result.codeQualityScore).toBeGreaterThan(50);
+    expect(result.complexityScore).toBeGreaterThan(60);
+    expect(result.complexityNotes.join(" ")).toContain("Estimated time complexity");
     expect(result.timeBonus).toBe(0);
   });
 

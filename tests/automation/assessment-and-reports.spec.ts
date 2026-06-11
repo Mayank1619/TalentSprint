@@ -25,11 +25,15 @@ test("candidate starts a timed assessment, switches questions, submits, and open
 
   await page.getByRole("button", { name: "Submit" }).click();
   await expect(page.getByText("Correctness")).toBeVisible();
+  await expect(page.getByText("Estimated complexity:")).toBeVisible();
+  await expect(page.getByText("Code quality:")).toBeVisible();
 
   await page.getByRole("link", { name: "Open candidate report summary" }).click();
   await expect(page).toHaveURL("/candidate/report");
   await expect(page.getByRole("heading", { name: "Your score summary" })).toBeVisible();
-  await expect(page.getByText("Hidden details protected")).toBeVisible();
+  await expect(page.getByText("Code quality")).toBeVisible();
+  await expect(page.getByText("Complexity score")).toBeVisible();
+  await expect(page.getByText(/Hidden tests and examiner-only diagnostics are protected/)).toBeVisible();
   await expect(page.getByText("def pair_sum")).toHaveCount(0);
 });
 

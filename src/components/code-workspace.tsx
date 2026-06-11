@@ -269,10 +269,19 @@ export function CodeWorkspace({
             </h2>
             {submitted && assessmentMode && (
               <p>
-                Correctness {result.correctnessScore}% · Speed bonus +{result.timeBonus}% · Time
-                taken {result.timeTakenLabel}
+                Correctness {result.correctnessScore}% · Code quality {result.codeQualityScore}% ·
+                Complexity {result.complexityScore}% · Speed bonus +{result.timeBonus}% · Time taken{" "}
+                {result.timeTakenLabel}
               </p>
             )}
+            <div className="quality-metrics">
+              <span>Estimated complexity: {result.complexityLabel}</span>
+              <span>Code quality: {result.codeQualityScore}%</span>
+              <span>Complexity score: {result.complexityScore}%</span>
+            </div>
+            {result.complexityNotes.slice(0, 2).map((line) => (
+              <p key={line}>{line}</p>
+            ))}
             {result.feedback.map((line) => (
               <p key={line}>{line}</p>
             ))}

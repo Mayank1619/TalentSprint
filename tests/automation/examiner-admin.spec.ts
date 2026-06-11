@@ -17,6 +17,8 @@ test("examiner reviews candidate outcomes and sends mock report emails", async (
   await page.goto("/examiner/reports/cand-001");
   await expect(page).toHaveURL("/examiner/reports/cand-001");
   await expect(page.getByRole("heading", { name: "Aarav Mehta" })).toBeVisible();
+  await expect(page.getByText("Time complexity").first()).toBeVisible();
+  await expect(page.getByText("Code quality").first()).toBeVisible();
 
   await page.getByRole("button", { name: "Email candidate summary" }).click();
   await expect(page.getByText("mock: Email rendered in mock mode")).toBeVisible();

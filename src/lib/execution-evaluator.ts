@@ -1,5 +1,6 @@
 import type { Language, Question } from "@/lib/mock-data";
 import type { EvaluationResult, TestOutcome, TestVisibility } from "@/lib/submission-types";
+import { analyzeCode } from "@/lib/code-analysis";
 
 type EvaluationOptions = {
   assessmentMode?: boolean;
@@ -72,7 +73,7 @@ export async function evaluateWithSandbox(
   const outcomes = await runPythonTests(code, executableQuestion);
   if (!outcomes) return null;
 
-  return buildResult(outcomes, options);
+  return buildResult(question, language, code, outcomes, options);
 }
 
 const executableQuestions: Record<string, ExecutableQuestion> = {
@@ -295,15 +296,25 @@ print("__TALENT_SPRINT_RESULT__" + json.dumps(_talent_results, separators=(",", 
 `;
 }
 
-function buildResult(outcomes: TestOutcome[], options: EvaluationOptions): EvaluationResult {
+function buildResult(
+  question: Question,
+  language: Language,
+  code: string,
+  outcomes: TestOutcome[],
+  options: EvaluationOptions,
+): EvaluationResult {
   const visibleOutcomes = outcomes.filter((outcome) => outcome.visibility === "visible");
   const hiddenOutcomes = outcomes.filter((outcome) => outcome.visibility === "hidden");
   const passed = outcomes.filter((outcome) => outcome.status === "passed").length;
   const correctnessScore = Math.round((passed / outcomes.length) * 100);
+  const analysis = analyzeCode({ question, language, code });
   const timeBonus = options.assessmentMode
     ? calculateTimeBonus(options.durationSeconds ?? 0, options.secondsRemaining ?? 0, correctnessScore)
     : 0;
-  const score = Math.min(100, correctnessScore + timeBonus);
+  const baseScore = Math.round(
+    correctnessScore * 0.7 + analysis.codeQualityScore * 0.15 + analysis.complexityScore * 0.15,
+  );
+  const score = correctnessScore === 0 ? 0 : Math.min(100, baseScore + timeBonus);
 
   return {
     provider: "external-runner",
@@ -314,6 +325,10 @@ function buildResult(outcomes: TestOutcome[], options: EvaluationOptions): Evalu
     hiddenPassed: hiddenOutcomes.filter((outcome) => outcome.status === "passed").length,
     hiddenTotal: hiddenOutcomes.length,
     correctnessScore,
+    codeQualityScore: analysis.codeQualityScore,
+    complexityScore: analysis.complexityScore,
+    complexityLabel: analysis.complexityLabel,
+    complexityNotes: analysis.complexityNotes,
     timeBonus,
     score,
     timeTakenLabel: options.assessmentMode

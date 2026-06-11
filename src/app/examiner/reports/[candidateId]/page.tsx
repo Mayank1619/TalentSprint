@@ -106,6 +106,27 @@ export default async function ReportDetailPage({
               <div className="report-question-grid">
                 <pre>{question.submittedCode}</pre>
                 <div className="outcome-list">
+                  <div className="outcome-row">
+                    <span>
+                      <strong>Code quality</strong>
+                      <small>Maintainability, naming, decomposition, and guard clauses</small>
+                    </span>
+                    <span className="status-pill success">{question.codeQualityScore}%</span>
+                  </div>
+                  <div className="outcome-row">
+                    <span>
+                      <strong>Time complexity</strong>
+                      <small>{question.complexityNotes.join(" ")}</small>
+                    </span>
+                    <span className="status-pill">{question.complexityLabel}</span>
+                  </div>
+                  <div className="outcome-row">
+                    <span>
+                      <strong>Complexity score</strong>
+                      <small>Estimated fit against expected Big-O for the prompt</small>
+                    </span>
+                    <span className="status-pill success">{question.complexityScore}%</span>
+                  </div>
                   {question.outcomes.map((outcome) => (
                     <div className="outcome-row" key={outcome.name}>
                       <span>

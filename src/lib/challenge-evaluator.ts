@@ -1,5 +1,6 @@
 import type { Question, Language } from "@/lib/mock-data";
 import type { EvaluationResult, TestOutcome, TestVisibility } from "@/lib/submission-types";
+import { analyzeCode } from "@/lib/code-analysis";
 
 type EvaluationOptions = {
   assessmentMode?: boolean;
@@ -39,10 +40,14 @@ export function evaluateSubmission(
   const hiddenOutcomes = outcomes.filter((outcome) => outcome.visibility === "hidden");
   const passed = outcomes.filter((outcome) => outcome.status === "passed").length;
   const correctnessScore = Math.round((passed / outcomes.length) * 100);
+  const analysis = analyzeCode({ question, language, code });
   const timeBonus = options.assessmentMode
     ? calculateTimeBonus(options.durationSeconds ?? 0, options.secondsRemaining ?? 0, correctnessScore)
     : 0;
-  const score = Math.min(100, correctnessScore + timeBonus);
+  const baseScore = Math.round(
+    correctnessScore * 0.7 + analysis.codeQualityScore * 0.15 + analysis.complexityScore * 0.15,
+  );
+  const score = correctnessScore === 0 ? 0 : Math.min(100, baseScore + timeBonus);
 
   return {
     provider: "local-static",
@@ -53,6 +58,10 @@ export function evaluateSubmission(
     hiddenPassed: hiddenOutcomes.filter((outcome) => outcome.status === "passed").length,
     hiddenTotal: hiddenOutcomes.length,
     correctnessScore,
+    codeQualityScore: analysis.codeQualityScore,
+    complexityScore: analysis.complexityScore,
+    complexityLabel: analysis.complexityLabel,
+    complexityNotes: analysis.complexityNotes,
     timeBonus,
     score,
     timeTakenLabel: options.assessmentMode
