@@ -25,6 +25,52 @@ test("examiner reviews candidate outcomes and sends mock report emails", async (
   await expect(page.getByText("mock: Email rendered in mock mode")).toHaveCount(2);
 });
 
+test("examiner configures automatic completion report emails for a test", async ({ page }) => {
+  const emailRequests: unknown[] = [];
+
+  await page.route("**/api/email", async (route) => {
+    emailRequests.push(route.request().postDataJSON());
+    await route.fulfill({
+      contentType: "application/json",
+      json: { ok: true, provider: "mock", id: "email-test", message: "Email rendered in mock mode." },
+    });
+  });
+
+  await page.goto("/examiner");
+
+  await page.getByLabel("Candidate invite emails").fill("candidate@talentsprint.dev");
+  await page.getByLabel("Examiner report email").fill("examiner@talentsprint.dev");
+  await page
+    .getByRole("checkbox", { name: "Email candidate score summary after completion" })
+    .check();
+  await page
+    .getByRole("checkbox", { name: "Email detailed examiner report after completion" })
+    .check();
+  await page.getByRole("button", { name: "Create test" }).click();
+
+  await expect(page.getByText("Assessment saved with")).toBeVisible();
+
+  await page.evaluate(() => {
+    window.localStorage.setItem("talent-sprint-user", "candidate-demo");
+  });
+  await page.goto("/assessment");
+
+  await expect(page.getByText("Candidate email on")).toBeVisible();
+  await expect(page.getByText("examiner email on")).toBeVisible();
+
+  await page.getByRole("button", { name: "Start assessment" }).click();
+  await page.getByRole("button", { name: "Submit" }).click();
+
+  await expect(page.getByText("Candidate report email: mock Email rendered in mock mode.")).toBeVisible();
+  await expect(page.getByText("Examiner report email: mock Email rendered in mock mode.")).toBeVisible();
+  expect(emailRequests).toEqual(
+    expect.arrayContaining([
+      expect.objectContaining({ kind: "candidate-report", to: "candidate@talentsprint.dev" }),
+      expect.objectContaining({ kind: "examiner-report", to: "examiner@talentsprint.dev" }),
+    ]),
+  );
+});
+
 test("administrator can inspect authoring controls and question library actions", async ({ page }) => {
   await page.evaluate(() => {
     window.localStorage.setItem("talent-sprint-user", "admin-demo");

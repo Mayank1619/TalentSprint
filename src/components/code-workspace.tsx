@@ -17,9 +17,18 @@ type CodeWorkspaceProps = {
   submissionLinkLabel?: string;
   redirectOnSubmit?: boolean;
   autoSubmitSeconds?: number;
+  onSubmissionComplete?: (context: SubmissionContext) => Promise<string[] | void>;
 };
 
 const languages: Language[] = ["Python", "Java", "C#"];
+
+export type SubmissionContext = {
+  code: string;
+  language: Language;
+  result: EvaluationResult;
+  submittedAt: string;
+  timeTakenSeconds: number;
+};
 
 export function CodeWorkspace({
   question,
@@ -30,12 +39,14 @@ export function CodeWorkspace({
   submissionLinkLabel = "Open candidate report summary",
   redirectOnSubmit = false,
   autoSubmitSeconds,
+  onSubmissionComplete,
 }: CodeWorkspaceProps) {
   const { user } = useAuth();
   const [language, setLanguage] = useState<Language>("Python");
   const [code, setCode] = useState(question.starterCode.Python);
   const [result, setResult] = useState<EvaluationResult | null>(null);
   const [submitted, setSubmitted] = useState(false);
+  const [deliveryMessages, setDeliveryMessages] = useState<string[]>([]);
   const [secondsLeft, setSecondsLeft] = useState(autoSubmitSeconds ?? null);
   const startedAtRef = useRef(new Date().toISOString());
   const submitRef = useRef<() => Promise<void>>(async () => {});
@@ -84,6 +95,9 @@ export function CodeWorkspace({
   }, [assessmentMode, code, durationSeconds, language, question, secondsRemaining]);
 
   const submit = useCallback(async () => {
+    if (submitted) return;
+
+    setDeliveryMessages([]);
     const nextResult = await evaluateCurrentCode();
     const submittedAt = new Date().toISOString();
     const timeTakenSeconds =
@@ -110,6 +124,16 @@ export function CodeWorkspace({
         result: nextResult,
       });
     }
+    if (onSubmissionComplete) {
+      const messages = await onSubmissionComplete({
+        code,
+        language,
+        result: nextResult,
+        submittedAt,
+        timeTakenSeconds,
+      });
+      setDeliveryMessages(messages ?? []);
+    }
     if (redirectOnSubmit) {
       window.location.assign(submissionHref);
     }
@@ -119,10 +143,12 @@ export function CodeWorkspace({
     code,
     evaluateCurrentCode,
     language,
+    onSubmissionComplete,
     question,
     redirectOnSubmit,
     secondsLeft,
     submissionHref,
+    submitted,
     user,
   ]);
 
@@ -256,6 +282,9 @@ export function CodeWorkspace({
                 detailed outcomes.
               </strong>
             )}
+            {deliveryMessages.map((message) => (
+              <p key={message}>{message}</p>
+            ))}
             {submitted && (
               <Link className="inline-link" href={submissionHref}>
                 {submissionLinkLabel}

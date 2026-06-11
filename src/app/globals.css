@@ -822,6 +822,149 @@ input:focus-visible {
   font-weight: 850;
 }
 
+.assessment-builder {
+  display: grid;
+  gap: 1rem;
+  border: 1px solid var(--border-subtle);
+  border-radius: 0.85rem;
+  background: color-mix(in srgb, var(--bg-surface) 88%, transparent);
+  box-shadow: var(--shadow-soft);
+  margin-bottom: 1rem;
+  padding: 1rem;
+}
+
+.builder-heading,
+.builder-actions,
+.email-rule-grid label,
+.email-rule-grid span {
+  display: flex;
+  align-items: center;
+}
+
+.builder-heading {
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.builder-heading.compact {
+  margin-top: 0.25rem;
+}
+
+.builder-heading h2,
+.builder-heading h3 {
+  font-size: 1.35rem;
+  font-weight: 900;
+}
+
+.builder-heading p,
+.form-field span,
+.form-message {
+  color: var(--text-secondary);
+}
+
+.builder-grid,
+.email-rule-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.form-field {
+  display: grid;
+  gap: 0.4rem;
+  font-weight: 800;
+}
+
+.form-field input,
+.form-field textarea {
+  width: 100%;
+  border: 1px solid var(--border-subtle);
+  border-radius: 0.58rem;
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  padding: 0.72rem 0.85rem;
+}
+
+.form-field textarea {
+  min-height: 6rem;
+  resize: vertical;
+}
+
+.email-rule-grid label {
+  gap: 0.65rem;
+  min-height: 4.25rem;
+  border: 1px solid var(--border-subtle);
+  border-radius: 0.7rem;
+  background: var(--bg-elevated);
+  cursor: pointer;
+  padding: 0.8rem;
+}
+
+.email-rule-grid input {
+  width: 1.1rem;
+  height: 1.1rem;
+  accent-color: var(--brand-primary);
+}
+
+.email-rule-grid span {
+  gap: 0.45rem;
+  color: var(--text-primary);
+  font-weight: 800;
+}
+
+.assessment-question-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.assessment-question-grid button {
+  display: grid;
+  gap: 0.45rem;
+  min-height: 6rem;
+  border: 1px solid var(--border-subtle);
+  border-radius: 0.65rem;
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  cursor: pointer;
+  padding: 0.8rem;
+  text-align: left;
+}
+
+.assessment-question-grid button.selected {
+  border-color: color-mix(in srgb, var(--brand-primary) 58%, var(--border-subtle));
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--brand-primary) 14%, transparent);
+}
+
+.assessment-question-grid button span {
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.builder-actions {
+  gap: 0.65rem;
+  flex-wrap: wrap;
+}
+
+.form-message {
+  display: inline-flex;
+  gap: 0.45rem;
+  align-items: center;
+  width: fit-content;
+  border: 1px solid color-mix(in srgb, var(--success) 35%, var(--border-subtle));
+  border-radius: 0.65rem;
+  background: color-mix(in srgb, var(--success) 10%, var(--bg-surface));
+  color: var(--text-primary);
+  font-weight: 800;
+  padding: 0.72rem 0.85rem;
+}
+
+.form-message.error {
+  border-color: color-mix(in srgb, var(--error) 35%, var(--border-subtle));
+  background: color-mix(in srgb, var(--error) 10%, var(--bg-surface));
+}
+
 .skill-reminder {
   display: flex;
   flex-wrap: wrap;
@@ -1608,7 +1751,9 @@ input:focus-visible {
   .report-header,
   .report-summary,
   .report-question-grid,
-  .practice-steps {
+  .practice-steps,
+  .builder-grid,
+  .email-rule-grid {
     grid-template-columns: 1fr;
   }
 
@@ -1624,6 +1769,10 @@ input:focus-visible {
   .stat-grid,
   .auth-grid,
   .podium-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .assessment-question-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
@@ -1661,8 +1810,14 @@ input:focus-visible {
   .carousel-track,
   .screenshot-grid,
   .stat-grid,
-  .auth-grid {
+  .auth-grid,
+  .assessment-question-grid {
     grid-template-columns: 1fr;
+  }
+
+  .builder-heading {
+    align-items: flex-start;
+    flex-direction: column;
   }
 
   .table-card {
