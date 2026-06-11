@@ -38,6 +38,10 @@ const nextConfig: NextConfig = {
             value: "same-origin",
           },
           {
+            key: "Cross-Origin-Resource-Policy",
+            value: "same-origin",
+          },
+          {
             key: "Referrer-Policy",
             value: "strict-origin-when-cross-origin",
           },
