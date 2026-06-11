@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Eye, EyeOff, LockKeyhole, ServerCog, UserPlus, UserRoundCheck } from "lucide-react";
@@ -8,6 +8,7 @@ import { AuthNotice } from "@/components/auth-notice";
 import type { AuthResult } from "@/components/auth-provider";
 import { useAuth } from "@/components/auth-provider";
 import { roleHomePath, roleLabel } from "@/lib/auth";
+import { getRememberedEmail, getRememberMePreference } from "@/lib/supabase-client";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -16,6 +17,7 @@ export default function LoginPage() {
   const [notice, setNotice] = useState<AuthResult | null>(null);
   const [loginEmail, setLoginEmail] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
+  const [rememberMe, setRememberMe] = useState(true);
   const [name, setName] = useState("");
   const [registerEmail, setRegisterEmail] = useState("");
   const [registerPassword, setRegisterPassword] = useState("");
@@ -24,9 +26,18 @@ export default function LoginPage() {
   const [showRegisterPassword, setShowRegisterPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
+  useEffect(() => {
+    const frameId = window.requestAnimationFrame(() => {
+      setRememberMe(getRememberMePreference());
+      setLoginEmail(getRememberedEmail());
+    });
+
+    return () => window.cancelAnimationFrame(frameId);
+  }, []);
+
   async function handleLogin(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const result = await signIn(loginEmail, loginPassword);
+    const result = await signIn(loginEmail, loginPassword, { rememberMe });
     setNotice(result);
     if (result.ok && result.redirectTo) {
       router.push(result.redirectTo);
@@ -137,6 +148,14 @@ export default function LoginPage() {
               <Link className="inline-link auth-secondary-link" href="/forgot-password">
                 Forgot password?
               </Link>
+              <label className="checkbox-row">
+                <input
+                  checked={rememberMe}
+                  onChange={(event) => setRememberMe(event.target.checked)}
+                  type="checkbox"
+                />
+                <span>Remember me on this device</span>
+              </label>
               <button className="button primary" type="submit">
                 <UserRoundCheck size={18} /> Log in
               </button>

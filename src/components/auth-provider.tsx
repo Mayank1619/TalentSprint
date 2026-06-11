@@ -20,7 +20,7 @@ import {
   type RegistrationInput,
   type StoredAccount,
 } from "@/lib/auth";
-import { getSupabaseClient, isSupabaseConfigured } from "@/lib/supabase-client";
+import { getSupabaseClient, isSupabaseConfigured, setRememberMePreference } from "@/lib/supabase-client";
 
 export type AuthResult = {
   ok: boolean;
@@ -33,7 +33,7 @@ type AuthContextValue = {
   isLoading: boolean;
   authMode: AuthMode;
   accounts: StoredAccount[];
-  signIn: (email: string, password: string) => Promise<AuthResult>;
+  signIn: (email: string, password: string, options?: { rememberMe?: boolean }) => Promise<AuthResult>;
   registerCandidate: (input: RegistrationInput) => Promise<AuthResult>;
   requestPasswordReset: (email: string) => Promise<AuthResult>;
   updatePassword: (password: string, confirmPassword: string) => Promise<AuthResult>;
@@ -90,7 +90,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     window.requestAnimationFrame(() => {
       if (!isMounted) return;
       const nextAccounts = loadAccounts();
-      const storedUserId = window.localStorage.getItem(authStorageKeys.user);
+      const storedUserId = getStoredUserId();
       const storedGuest = loadGuest();
       const storedUser =
         nextAccounts.find((item) => item.id === storedUserId) ??
@@ -111,12 +111,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       isLoading,
       authMode,
       accounts,
-      signIn: async (email: string, password: string) => {
+      signIn: async (email: string, password: string, options?: { rememberMe?: boolean }) => {
+        const rememberMe = options?.rememberMe ?? true;
+        const normalizedEmail = normalizeEmail(email);
+        persistRememberedIdentity(rememberMe, normalizedEmail);
+        setRememberMePreference(rememberMe, normalizedEmail);
+
         const supabase = getSupabaseClient();
         if (supabase) {
           const { data, error } = await withAuthRequest(() =>
             supabase.auth.signInWithPassword({
-              email: normalizeEmail(email),
+              email: normalizedEmail,
               password,
             }),
           );
@@ -136,7 +141,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         const nextAccounts = accounts.length > 0 ? accounts : loadAccounts();
         const nextUser =
-          nextAccounts.find((item) => item.email === normalizeEmail(email) && item.password === password) ??
+          nextAccounts.find((item) => item.email === normalizedEmail && item.password === password) ??
           null;
 
         if (!nextUser) {
@@ -146,7 +151,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           return { ok: false, message: "This account is disabled. Contact your Talent Sprint administrator." };
         }
 
-        window.localStorage.setItem(authStorageKeys.user, nextUser.id);
+        saveCurrentUserId(nextUser.id, rememberMe);
         setAccounts(nextAccounts);
         setUser(nextUser);
         return {
@@ -435,6 +440,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           await supabase.auth.signOut();
         }
         window.localStorage.removeItem(authStorageKeys.user);
+        window.sessionStorage.removeItem(authStorageKeys.user);
         setUser(null);
       },
     }),
@@ -466,6 +472,25 @@ function loadAccounts() {
   return accounts;
 }
 
+function persistRememberedIdentity(rememberMe: boolean, email: string) {
+  window.localStorage.setItem(authStorageKeys.rememberMe, rememberMe ? "true" : "false");
+  if (rememberMe) {
+    window.localStorage.setItem(authStorageKeys.rememberEmail, email);
+  } else {
+    window.localStorage.removeItem(authStorageKeys.rememberEmail);
+  }
+}
+
+function saveCurrentUserId(userId: string, rememberMe: boolean) {
+  if (rememberMe) {
+    window.localStorage.setItem(authStorageKeys.user, userId);
+    window.sessionStorage.removeItem(authStorageKeys.user);
+  } else {
+    window.sessionStorage.setItem(authStorageKeys.user, userId);
+    window.localStorage.removeItem(authStorageKeys.user);
+  }
+}
+
 function saveAccounts(accounts: StoredAccount[]) {
   window.localStorage.setItem(authStorageKeys.accounts, JSON.stringify(accounts));
 }
@@ -483,9 +508,13 @@ function loadGuest() {
 }
 
 function loadCurrentGuest() {
-  const storedUserId = window.localStorage.getItem(authStorageKeys.user);
+  const storedUserId = getStoredUserId();
   const storedGuest = loadGuest();
   return storedGuest?.id === storedUserId ? storedGuest : null;
+}
+
+function getStoredUserId() {
+  return window.localStorage.getItem(authStorageKeys.user) ?? window.sessionStorage.getItem(authStorageKeys.user);
 }
 
 function parseAccounts(value: string | null) {

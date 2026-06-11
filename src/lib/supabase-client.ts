@@ -2,6 +2,9 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
 let browserClient: SupabaseClient | null = null;
 
+const rememberMeKey = "talent-sprint-remember-me";
+const rememberedEmailKey = "talent-sprint-remembered-email";
+
 export function isSupabaseConfigured() {
   return Boolean(getSupabaseUrl() && getSupabaseKey());
 }
@@ -17,6 +20,7 @@ export function getSupabaseClient() {
         persistSession: true,
         autoRefreshToken: true,
         detectSessionInUrl: true,
+        storage: createRememberAwareStorage(),
       },
     });
   }
@@ -42,4 +46,51 @@ export function normalizeSupabaseProjectUrl(value: string | undefined) {
   if (!trimmed) return undefined;
 
   return trimmed.replace(/\/(rest|auth|storage)\/v1$/i, "");
+}
+
+export function setRememberMePreference(remember: boolean, email?: string) {
+  if (typeof window === "undefined") return;
+
+  window.localStorage.setItem(rememberMeKey, remember ? "true" : "false");
+  if (remember && email) {
+    window.localStorage.setItem(rememberedEmailKey, email.trim().toLowerCase());
+  } else if (!remember) {
+    window.localStorage.removeItem(rememberedEmailKey);
+  }
+}
+
+export function getRememberMePreference() {
+  if (typeof window === "undefined") return true;
+  return window.localStorage.getItem(rememberMeKey) !== "false";
+}
+
+export function getRememberedEmail() {
+  if (typeof window === "undefined") return "";
+  return window.localStorage.getItem(rememberedEmailKey) ?? "";
+}
+
+function createRememberAwareStorage() {
+  return {
+    getItem(key: string) {
+      if (typeof window === "undefined") return null;
+      if (!getRememberMePreference()) return window.sessionStorage.getItem(key);
+
+      return window.localStorage.getItem(key) ?? window.sessionStorage.getItem(key);
+    },
+    setItem(key: string, value: string) {
+      if (typeof window === "undefined") return;
+      if (getRememberMePreference()) {
+        window.localStorage.setItem(key, value);
+        window.sessionStorage.removeItem(key);
+      } else {
+        window.sessionStorage.setItem(key, value);
+        window.localStorage.removeItem(key);
+      }
+    },
+    removeItem(key: string) {
+      if (typeof window === "undefined") return;
+      window.localStorage.removeItem(key);
+      window.sessionStorage.removeItem(key);
+    },
+  };
 }

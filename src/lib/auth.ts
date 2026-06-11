@@ -61,6 +61,8 @@ export type GuestPracticeInput = {
 export const authStorageKeys = {
   accounts: "talent-sprint-accounts",
   guest: "talent-sprint-guest-user",
+  rememberEmail: "talent-sprint-remembered-email",
+  rememberMe: "talent-sprint-remember-me",
   user: "talent-sprint-user",
 };
 

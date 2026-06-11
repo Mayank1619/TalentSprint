@@ -67,11 +67,13 @@ test("guest can practice with name and email for leaderboard", async ({ page }) 
   await expect(page.getByRole("heading", { name: "Choose your next practice sprint." })).toBeVisible();
   await expect(page.getByText("Guest Runner")).toBeVisible();
 
-  await page.goto("/practice/pair-sum");
-  await page.getByRole("button", { name: "Java" }).click();
+  await page.goto("/practice/first-non-repeating-character");
+  await page
+    .getByLabel("First Non-Repeating Character Python editor")
+    .fill("def first_non_repeating_character(input):\n    counts = {}\n    for char in input:\n        return char");
   await page.getByRole("button", { name: "Submit" }).click();
 
-  await expect(page).toHaveURL("/practice/pair-sum/report", { timeout: 15_000 });
+  await expect(page).toHaveURL("/practice/first-non-repeating-character/report", { timeout: 15_000 });
   await expect(page.getByText("Generated from your latest submission")).toBeVisible();
 
   await page.locator(".report-actions").getByRole("link", { name: "Leaderboard" }).click();
@@ -89,6 +91,42 @@ test("candidate login lands on practice", async ({ page }) => {
   await expect(page.getByText("Candidate Demo")).toBeVisible();
   await expect(page.getByRole("navigation").getByRole("link", { name: "Admin" })).toHaveCount(0);
   await expect(page.getByRole("navigation").getByRole("link", { name: "Examiner" })).toHaveCount(0);
+});
+
+test("remember me stores email and controls local demo session persistence", async ({ page }) => {
+  await page.goto("/login");
+  await page.getByLabel("Email").fill("candidate@talentsprint.dev");
+  await page.getByLabel("Password", { exact: true }).fill("Password123!");
+  await page.getByLabel("Remember me on this device").check();
+  await page.locator("form").getByRole("button", { name: "Log in" }).click();
+  await expect(page).toHaveURL("/practice");
+
+  await expect
+    .poll(() => page.evaluate(() => window.localStorage.getItem("talent-sprint-remembered-email")))
+    .toBe("candidate@talentsprint.dev");
+  await expect
+    .poll(() => page.evaluate(() => window.localStorage.getItem("talent-sprint-user")))
+    .toBe("candidate-demo");
+
+  await page.getByRole("button", { name: "Sign out" }).click();
+  await page.goto("/login");
+  await expect(page.getByLabel("Email")).toHaveValue("candidate@talentsprint.dev");
+
+  await page.getByLabel("Email").fill("examiner@talentsprint.dev");
+  await page.getByLabel("Password", { exact: true }).fill("Password123!");
+  await page.getByLabel("Remember me on this device").uncheck();
+  await page.locator("form").getByRole("button", { name: "Log in" }).click();
+  await expect(page).toHaveURL("/examiner");
+
+  await expect
+    .poll(() => page.evaluate(() => window.localStorage.getItem("talent-sprint-remembered-email")))
+    .toBeNull();
+  await expect
+    .poll(() => page.evaluate(() => window.localStorage.getItem("talent-sprint-user")))
+    .toBeNull();
+  await expect
+    .poll(() => page.evaluate(() => window.sessionStorage.getItem("talent-sprint-user")))
+    .toBe("examiner-demo");
 });
 
 test("examiner and administrator login land on their workspaces", async ({ page }) => {
