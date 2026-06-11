@@ -110,6 +110,32 @@ test("examiner and administrator login land on their workspaces", async ({ page 
   await expect(page.getByRole("navigation").getByRole("link", { name: "Admin" })).toBeVisible();
 });
 
+test("disabled examiner cannot log in", async ({ page }) => {
+  await page.goto("/");
+  await page.evaluate(() => {
+    window.localStorage.setItem(
+      "talent-sprint-accounts",
+      JSON.stringify([
+        {
+          id: "disabled-examiner",
+          name: "Disabled Examiner",
+          email: "disabled.examiner@example.com",
+          role: "examiner",
+          password: "Password123!",
+          status: "disabled",
+          createdAt: new Date().toISOString(),
+        },
+      ]),
+    );
+  });
+
+  await page.goto("/login");
+  await page.getByLabel("Email").fill("disabled.examiner@example.com");
+  await page.getByLabel("Password", { exact: true }).fill("Password123!");
+  await page.locator("form").getByRole("button", { name: "Log in" }).click();
+  await expect(page.getByText("This account is disabled. Contact your Talent Sprint administrator.")).toBeVisible();
+});
+
 test("candidate cannot access examiner or administrator surfaces", async ({ page }) => {
   await signInAs(page, "candidate-demo");
 

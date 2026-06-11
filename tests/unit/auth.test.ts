@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { canAccess, roleLabel } from "@/lib/auth";
+import { canAccess, roleLabel, validateExaminerInvite } from "@/lib/auth";
 import { normalizeSupabaseProjectUrl } from "@/lib/supabase-client";
 
 describe("authorization helpers", () => {
@@ -11,6 +11,16 @@ describe("authorization helpers", () => {
 
   it("returns display labels for roles", () => {
     expect(roleLabel("administrator")).toBe("Administrator");
+  });
+
+  it("validates examiner invitation details", () => {
+    expect(validateExaminerInvite({ name: "Ada Lovelace", email: "ada@example.com" })).toBeNull();
+    expect(validateExaminerInvite({ name: "A", email: "ada@example.com" })).toBe(
+      "Enter the examiner's full name.",
+    );
+    expect(validateExaminerInvite({ name: "Ada Lovelace", email: "not-email" })).toBe(
+      "Enter a valid examiner email address.",
+    );
   });
 
   it("normalizes Supabase API URLs to the project origin required by auth", () => {

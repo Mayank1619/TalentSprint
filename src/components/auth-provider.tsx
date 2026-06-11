@@ -4,14 +4,18 @@ import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import {
   type AuthMode,
   authStorageKeys,
+  type ExaminerInviteInput,
   normalizeEmail,
+  parseAccountStatus,
   parseRole,
   roleHomePath,
   seededAccounts,
   validateGuestPractice,
+  validateExaminerInvite,
   validateRegistration,
   type DemoUser,
   type GuestPracticeInput,
+  type ManagedExaminer,
   type RegistrationInput,
   type StoredAccount,
 } from "@/lib/auth";
@@ -33,6 +37,10 @@ type AuthContextValue = {
   requestPasswordReset: (email: string) => Promise<AuthResult>;
   updatePassword: (password: string, confirmPassword: string) => Promise<AuthResult>;
   startGuestPractice: (input: GuestPracticeInput) => Promise<AuthResult>;
+  listManagedExaminers: () => Promise<ManagedExaminer[]>;
+  inviteExaminer: (input: ExaminerInviteInput) => Promise<AuthResult>;
+  setExaminerAccess: (id: string, enabled: boolean) => Promise<AuthResult>;
+  removeExaminer: (id: string) => Promise<AuthResult>;
   signOut: () => Promise<void>;
 };
 
@@ -130,6 +138,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         if (!nextUser) {
           return { ok: false, message: "Email or password is incorrect." };
+        }
+        if (parseAccountStatus(nextUser.status) === "disabled") {
+          return { ok: false, message: "This account is disabled. Contact your Talent Sprint administrator." };
         }
 
         window.localStorage.setItem(authStorageKeys.user, nextUser.id);
@@ -270,6 +281,100 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           redirectTo: "/practice",
         };
       },
+      listManagedExaminers: async () => {
+        const supabase = getSupabaseClient();
+        if (supabase) {
+          const result = await adminApiRequest<{ examiners?: ManagedExaminer[] }>(
+            "/api/admin/examiners",
+            { method: "GET" },
+          );
+          return result.examiners ?? [];
+        }
+
+        const nextAccounts = loadAccounts();
+        setAccounts(nextAccounts);
+        return nextAccounts.filter(isExaminerAccount).map(mapStoredExaminer);
+      },
+      inviteExaminer: async (input: ExaminerInviteInput) => {
+        const validationMessage = validateExaminerInvite(input);
+        if (validationMessage) return { ok: false, message: validationMessage };
+
+        const supabase = getSupabaseClient();
+        if (supabase) {
+          return adminApiRequest<AuthResult>("/api/admin/examiners", {
+            method: "POST",
+            body: JSON.stringify({ action: "invite", name: input.name.trim(), email: normalizeEmail(input.email) }),
+          });
+        }
+
+        const nextAccounts = accounts.length > 0 ? accounts : loadAccounts();
+        const email = normalizeEmail(input.email);
+        const existing = nextAccounts.find((account) => account.email === email);
+        if (existing && existing.role !== "examiner") {
+          return { ok: false, message: "That email already belongs to a non-examiner account." };
+        }
+
+        const now = new Date().toISOString();
+        const nextExaminer: StoredAccount = {
+          id: existing?.id ?? `examiner-${crypto.randomUUID()}`,
+          name: input.name.trim(),
+          email,
+          role: "examiner",
+          password: existing?.password ?? "Password123!",
+          status: "active",
+          createdAt: existing?.createdAt ?? now,
+          invitedAt: now,
+        };
+        const updatedAccounts = existing
+          ? nextAccounts.map((account) => (account.id === existing.id ? nextExaminer : account))
+          : [...nextAccounts, nextExaminer];
+
+        saveAccounts(updatedAccounts);
+        setAccounts(updatedAccounts);
+        return {
+          ok: true,
+          message:
+            "Examiner access created. In local mode they can sign in with Password123!; production sends a secure setup email.",
+        };
+      },
+      setExaminerAccess: async (id: string, enabled: boolean) => {
+        const supabase = getSupabaseClient();
+        if (supabase) {
+          return adminApiRequest<AuthResult>("/api/admin/examiners", {
+            method: "POST",
+            body: JSON.stringify({ action: enabled ? "enable" : "disable", id }),
+          });
+        }
+
+        const nextAccounts = accounts.length > 0 ? accounts : loadAccounts();
+        const updatedAccounts: StoredAccount[] = nextAccounts.map((account) =>
+          account.id === id && account.role === "examiner"
+            ? {
+                ...account,
+                status: enabled ? ("active" as const) : ("disabled" as const),
+                disabledAt: enabled ? undefined : new Date().toISOString(),
+              }
+            : account,
+        );
+        saveAccounts(updatedAccounts);
+        setAccounts(updatedAccounts);
+        return { ok: true, message: enabled ? "Examiner access enabled." : "Examiner access disabled." };
+      },
+      removeExaminer: async (id: string) => {
+        const supabase = getSupabaseClient();
+        if (supabase) {
+          return adminApiRequest<AuthResult>("/api/admin/examiners", {
+            method: "POST",
+            body: JSON.stringify({ action: "remove", id }),
+          });
+        }
+
+        const nextAccounts = accounts.length > 0 ? accounts : loadAccounts();
+        const updatedAccounts = nextAccounts.filter((account) => account.id !== id || account.role !== "examiner");
+        saveAccounts(updatedAccounts);
+        setAccounts(updatedAccounts);
+        return { ok: true, message: "Examiner access removed." };
+      },
       signOut: async () => {
         const supabase = getSupabaseClient();
         if (supabase) {
@@ -348,7 +453,8 @@ function isStoredAccount(value: StoredAccount) {
     typeof value.email === "string" &&
     ["candidate", "examiner", "administrator"].includes(value.role) &&
     typeof value.password === "string" &&
-    typeof value.createdAt === "string"
+    typeof value.createdAt === "string" &&
+    (value.status === undefined || value.status === "active" || value.status === "disabled")
   );
 }
 
@@ -416,8 +522,8 @@ function mapSupabaseUser(value: {
   user_metadata?: Record<string, unknown>;
 }): DemoUser {
   const metadata = value.user_metadata ?? {};
-  const role = parseRole(metadata.role);
   const email = value.email ?? "";
+  const role = isMasterAdminEmail(email) ? "administrator" : parseRole(metadata.role);
   const fallbackName = email ? email.split("@")[0] : "Talent Sprint User";
 
   return {
@@ -426,4 +532,48 @@ function mapSupabaseUser(value: {
     email,
     role,
   };
+}
+
+function isExaminerAccount(account: StoredAccount): account is StoredAccount & { role: "examiner" } {
+  return account.role === "examiner";
+}
+
+function mapStoredExaminer(account: StoredAccount & { role: "examiner" }): ManagedExaminer {
+  return {
+    id: account.id,
+    name: account.name,
+    email: account.email,
+    role: "examiner",
+    status: parseAccountStatus(account.status),
+    createdAt: account.createdAt,
+    invitedAt: account.invitedAt,
+  };
+}
+
+async function adminApiRequest<TResponse>(path: string, init: RequestInit): Promise<TResponse> {
+  const supabase = getSupabaseClient();
+  const { data } = supabase ? await supabase.auth.getSession() : { data: { session: null } };
+  const headers = new Headers(init.headers);
+  headers.set("Content-Type", "application/json");
+  if (data.session?.access_token) {
+    headers.set("Authorization", `Bearer ${data.session.access_token}`);
+  }
+
+  const response = await fetch(path, { ...init, headers });
+  const payload = (await response.json()) as TResponse & { message?: string };
+  if (!response.ok) {
+    throw new Error(payload.message ?? "Admin request failed.");
+  }
+
+  return payload;
+}
+
+function isMasterAdminEmail(email: string) {
+  const configuredEmails =
+    process.env.NEXT_PUBLIC_MASTER_ADMIN_EMAIL ?? process.env.NEXT_PUBLIC_ADMIN_EMAIL ?? "admin@talentsprint.dev";
+  return configuredEmails
+    .split(",")
+    .map((value) => normalizeEmail(value))
+    .filter(Boolean)
+    .includes(normalizeEmail(email));
 }

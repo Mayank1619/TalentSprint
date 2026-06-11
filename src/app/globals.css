@@ -1346,6 +1346,67 @@ input:focus-visible {
   gap: 1rem;
 }
 
+.admin-access-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(280px, 0.55fr);
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.examiner-access-panel {
+  gap: 1rem;
+}
+
+.examiner-invite-form {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+  align-items: end;
+}
+
+.examiner-list {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.examiner-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  border: 1px solid var(--border-subtle);
+  border-radius: 0.7rem;
+  background: var(--bg-elevated);
+  padding: 0.9rem;
+}
+
+.examiner-row h3 {
+  font-size: 1rem;
+}
+
+.examiner-row p {
+  color: var(--text-secondary);
+  margin-top: 0.12rem;
+}
+
+.examiner-policy-card {
+  align-self: stretch;
+}
+
+.status-pill {
+  display: inline-flex;
+  min-height: 2rem;
+  align-items: center;
+  border: 1px solid color-mix(in srgb, var(--success) 45%, var(--border-subtle));
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--success) 12%, var(--bg-surface));
+  color: var(--text-primary);
+  font-size: 0.78rem;
+  font-weight: 850;
+  padding: 0.35rem 0.7rem;
+}
+
+.icon-button.danger {
+  color: var(--error);
+}
+
 .question-library {
   display: grid;
   gap: 0.75rem;
@@ -1809,6 +1870,7 @@ input:focus-visible {
   .workspace,
   .start-card,
   .authoring-grid,
+  .admin-access-grid,
   .auth-layout,
   .report-header,
   .report-summary,
@@ -1816,6 +1878,10 @@ input:focus-visible {
   .practice-steps,
   .builder-grid,
   .email-rule-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .examiner-invite-form {
     grid-template-columns: 1fr;
   }
 
@@ -1875,6 +1941,10 @@ input:focus-visible {
   .auth-grid,
   .assessment-question-grid {
     grid-template-columns: 1fr;
+  }
+
+  .examiner-row {
+    flex-direction: column;
   }
 
   .builder-heading {

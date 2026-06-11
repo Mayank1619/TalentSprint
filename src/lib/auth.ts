@@ -10,16 +10,36 @@ export type DemoUser = {
 
 export type StoredAccount = DemoUser & {
   password: string;
+  status?: AccountStatus;
   createdAt: string;
+  invitedAt?: string;
+  disabledAt?: string;
 };
 
 export type AuthMode = "supabase" | "local";
+export type AccountStatus = "active" | "disabled";
 
 export type RegistrationInput = {
   name: string;
   email: string;
   password: string;
   confirmPassword: string;
+};
+
+export type ExaminerInviteInput = {
+  name: string;
+  email: string;
+};
+
+export type ManagedExaminer = {
+  id: string;
+  name: string;
+  email: string;
+  role: "examiner";
+  status: AccountStatus;
+  createdAt?: string;
+  invitedAt?: string;
+  lastSignInAt?: string;
 };
 
 export type GuestPracticeInput = {
@@ -90,6 +110,10 @@ export function parseRole(value: unknown): Role {
     : "candidate";
 }
 
+export function parseAccountStatus(value: unknown): AccountStatus {
+  return value === "disabled" ? "disabled" : "active";
+}
+
 export function normalizeEmail(email: string) {
   return email.trim().toLowerCase();
 }
@@ -106,6 +130,16 @@ export function validateRegistration(input: RegistrationInput) {
     return "Password must include an uppercase letter and a number.";
   }
   if (password !== input.confirmPassword) return "Passwords do not match.";
+
+  return null;
+}
+
+export function validateExaminerInvite(input: ExaminerInviteInput) {
+  const name = input.name.trim();
+  const email = normalizeEmail(input.email);
+
+  if (name.length < 2) return "Enter the examiner's full name.";
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return "Enter a valid examiner email address.";
 
   return null;
 }

@@ -81,6 +81,20 @@ test("administrator can inspect authoring controls and question library actions"
   await page.goto("/admin");
 
   await expect(page.getByRole("heading", { name: "Manage the question library and platform settings." })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Examiner access" })).toBeVisible();
+  await expect(page.getByText("examiner@talentsprint.dev")).toBeVisible();
+  await page.getByLabel("Examiner name").fill("Invited Examiner");
+  await page.getByLabel("Examiner email").fill("invited.examiner@example.com");
+  await page.getByRole("button", { name: "Invite examiner" }).click();
+  await expect(page.getByText("Examiner access created.")).toBeVisible();
+  await expect(page.getByText("invited.examiner@example.com")).toBeVisible();
+  await page.getByRole("button", { name: "Disable Invited Examiner" }).click();
+  await expect(page.getByText("Examiner access disabled.")).toBeVisible();
+  await page.getByRole("button", { name: "Enable Invited Examiner" }).click();
+  await expect(page.getByText("Examiner access enabled.")).toBeVisible();
+  await page.getByRole("button", { name: "Remove Invited Examiner" }).click();
+  await expect(page.getByText("Examiner access removed.")).toBeVisible();
+  await expect(page.getByText("invited.examiner@example.com")).toHaveCount(0);
   await expect(page.getByRole("button", { name: "New question" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Platform settings" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Preview Pair Sum" })).toBeVisible();

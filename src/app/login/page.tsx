@@ -53,8 +53,8 @@ export default function LoginPage() {
         <p className="eyebrow text-only">Secure access</p>
         <h1>Log in or create a candidate account.</h1>
         <p>
-          Register as a candidate to practice and submit solutions. Existing examiner and admin
-          accounts land directly in their role-specific workspaces after login.
+          Candidates can register to practice and submit solutions. Examiner accounts are created by
+          an administrator and receive an email link to set their password.
         </p>
       </section>
 
@@ -225,7 +225,7 @@ export default function LoginPage() {
           {authMode === "supabase" ? (
             <p>
               Supabase Auth is active. Candidate registration creates a real auth user, and login
-              sessions are managed by Supabase.
+              sessions are managed by Supabase. Examiner registration is admin-invited.
             </p>
           ) : (
             <>
@@ -242,8 +242,9 @@ export default function LoginPage() {
       <section className="security-note">
         <LockKeyhole />
         <p>
-          Candidate registration assigns candidate access automatically. Examiner and administrator
-          roles should be granted in the auth provider by setting user metadata role values.
+          Candidate registration assigns candidate access automatically. Examiner access is granted
+          only from the administrator workspace, while administrator access is limited to configured
+          master admins or users with administrator metadata.
         </p>
       </section>
     </main>
