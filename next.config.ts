@@ -34,6 +34,10 @@ const nextConfig: NextConfig = {
             value: "credentialless",
           },
           {
+            key: "Cross-Origin-Opener-Policy",
+            value: "same-origin",
+          },
+          {
             key: "Referrer-Policy",
             value: "strict-origin-when-cross-origin",
           },

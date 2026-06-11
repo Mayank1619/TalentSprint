@@ -1,4 +1,6 @@
 10049	IGNORE	Non-storable content is expected for dynamic Next.js pages and 404 probes in the baseline crawl.
+10055	IGNORE	Next.js production pages currently require script-src unsafe-inline for framework hydration scripts until nonce-based CSP is implemented.
 10094	IGNORE	Base64 disclosure is noisy for bundled Next.js assets and CSS data values; secret scanning covers real credential leakage.
 10111	IGNORE	Authentication form detection is informational and expected on the login page.
+10202	IGNORE	Auth forms are client-handled Supabase flows and do not submit state-changing POSTs to the Next.js server.
 90005	IGNORE	Sec-Fetch-* request headers are browser/client supplied and are not controllable response headers.
