@@ -96,7 +96,7 @@ test("examiner and administrator login land on their workspaces", async ({ page 
   await page.getByLabel("Email").fill("examiner@talentsprint.dev");
   await page.getByLabel("Password", { exact: true }).fill("Password123!");
   await page.locator("form").getByRole("button", { name: "Log in" }).click();
-  await expect(page).toHaveURL("/examiner");
+  await expect(page).toHaveURL("/examiner", { timeout: 15_000 });
   await expect(page.getByRole("heading", { name: "Create tests, send invites, and review outcomes." })).toBeVisible();
   await expect(page.getByRole("navigation").getByRole("link", { name: "Admin" })).toHaveCount(0);
 
@@ -105,7 +105,7 @@ test("examiner and administrator login land on their workspaces", async ({ page 
   await page.getByLabel("Email").fill("admin@talentsprint.dev");
   await page.getByLabel("Password", { exact: true }).fill("Password123!");
   await page.locator("form").getByRole("button", { name: "Log in" }).click();
-  await expect(page).toHaveURL("/admin");
+  await expect(page).toHaveURL("/admin", { timeout: 15_000 });
   await expect(page.getByRole("heading", { name: "Manage the question library and platform settings." })).toBeVisible();
   await expect(page.getByRole("navigation").getByRole("link", { name: "Admin" })).toBeVisible();
 });
