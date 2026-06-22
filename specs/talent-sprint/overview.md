@@ -97,9 +97,10 @@ The current MVP technology recommendation is documented in `docs/tech-stack.md`.
 
 Summary:
 
-- Next.js, React, and TypeScript deployed on Vercel.
-- Supabase Postgres and Supabase Auth for database and authentication.
-- Drizzle ORM for schema and database access.
+- Next.js, React, and TypeScript.
+- Better Auth for self-hosted candidate, examiner, and administrator authentication.
+- PostgreSQL for shared/staging/production application data, with SQLite acceptable for local development and tests.
+- Drizzle ORM and Drizzle Kit for schema and database access.
 - Resend for transactional email.
 - Monaco Editor for browser coding.
 - Judge0-compatible external execution adapter for Java, Python, and C# code execution.
