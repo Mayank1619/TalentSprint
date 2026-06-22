@@ -184,7 +184,7 @@ export default function Home() {
       <section className="section cta-band">
         <div>
           <p className="eyebrow text-only">Build path</p>
-          <h2>Start with a local MVP, then plug in Supabase, email, and sandbox execution.</h2>
+          <h2>Start with a local MVP, then plug in Postgres auth, email, and sandbox execution.</h2>
         </div>
         <div className="feature-grid tight">
           <article>

@@ -127,7 +127,7 @@ export default function QuestionAuthoringGuidePage() {
         <p>
           The current prototype stores question definitions in source. A production version should
           move authored questions, versions, test cases, expected outputs, and review status into
-          Supabase tables with administrator approval workflows.
+          Postgres tables with administrator approval workflows.
         </p>
       </section>
 

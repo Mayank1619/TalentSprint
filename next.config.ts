@@ -1,14 +1,19 @@
 import type { NextConfig } from "next";
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "https://xdxzqivugfosgdalgmso.supabase.co";
-const supabaseOrigin = new URL(supabaseUrl).origin;
+const externalConnectOrigins = [
+  "https://api.resend.com",
+  process.env.JUDGE0_API_URL,
+  process.env.PISTON_API_URL,
+]
+  .filter((value): value is string => Boolean(value))
+  .map((value) => new URL(value).origin);
 const contentSecurityPolicy = [
   "default-src 'self'",
   "script-src 'self' 'unsafe-inline'",
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data:",
   "font-src 'self' data:",
-  `connect-src 'self' https://api.resend.com ${supabaseOrigin}`,
+  `connect-src 'self' ${Array.from(new Set(externalConnectOrigins)).join(" ")}`,
   "frame-ancestors 'none'",
   "base-uri 'self'",
   "form-action 'self'",

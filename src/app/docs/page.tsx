@@ -112,8 +112,8 @@ export default function DocsPage() {
             <h2>Email behavior</h2>
             <p>
               Candidate report emails and examiner report emails are controlled by the examiner
-              when creating a test. Password reset and verification emails are handled by Supabase
-              Auth, while report emails use the configured app email provider.
+              when creating a test. Password reset emails are handled by Better Auth, while report
+              emails use the configured app email provider.
             </p>
           </section>
 

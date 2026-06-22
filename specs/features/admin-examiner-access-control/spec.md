@@ -16,7 +16,7 @@ cannot self-register or gain elevated access without approval.
 
 1. Given I am signed in as an administrator, when I invite an examiner with a valid name and email,
    then the examiner account is created with examiner role metadata.
-2. Given production Supabase admin credentials are configured, when the examiner is invited, then a
+2. Given production Postgres auth credentials are configured, when the examiner is invited, then a
    secure email link is sent so the examiner can set their password.
 3. Given a candidate or unauthenticated user calls the examiner invite endpoint, then the request is
    rejected before any account is created.
@@ -51,8 +51,8 @@ As a candidate, I want to self-register for practice while examiner access remai
 - **FR-AEAC-001**: Candidate self-registration MUST always assign the candidate role.
 - **FR-AEAC-002**: Examiner accounts MUST be created only through an administrator-only workflow.
 - **FR-AEAC-003**: The administrator workflow MUST collect examiner full name and email address.
-- **FR-AEAC-004**: Production examiner invitations MUST use Supabase server-side admin APIs, never
-  browser-exposed keys.
+- **FR-AEAC-004**: Production examiner invitations MUST use server-side Better Auth APIs and
+  Postgres profile updates, never browser-exposed database credentials.
 - **FR-AEAC-005**: Invited examiners MUST receive a secure email flow that lets them set their password.
 - **FR-AEAC-006**: Administrators MUST be able to disable, re-enable, and remove examiner access.
 - **FR-AEAC-007**: Disabled examiner accounts MUST be blocked from login.
@@ -61,7 +61,7 @@ As a candidate, I want to self-register for practice while examiner access remai
 
 ## Security Requirements
 
-- The Supabase service-role key MUST only be used server-side.
+- Database credentials and Better Auth secrets MUST only be used server-side.
 - The examiner management API MUST verify the current user is an administrator before any action.
 - Administrator identity MAY come from user metadata or a configured master admin email.
 - Candidate, examiner, and unauthenticated users MUST receive authorization errors for examiner
@@ -70,9 +70,10 @@ As a candidate, I want to self-register for practice while examiner access remai
 
 ## Environment
 
-- `NEXT_PUBLIC_SUPABASE_URL`: Supabase project origin.
-- `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`: Browser-safe Supabase key.
-- `SUPABASE_SERVICE_ROLE_KEY`: Server-only key for admin user management.
+- `NEXT_PUBLIC_AUTH_MODE`: Set to `postgres` to enable production auth.
+- `DATABASE_URL`: Server-only Postgres connection string.
+- `BETTER_AUTH_SECRET`: Server-only Better Auth signing secret.
+- `BETTER_AUTH_URL`: Public site origin used for auth callbacks and reset links.
 - `MASTER_ADMIN_EMAIL`: Server-side comma-separated email allowlist for master admin accounts.
 - `NEXT_PUBLIC_MASTER_ADMIN_EMAIL`: Browser-side email mapping used for navigation and local role
   resolution.

@@ -286,7 +286,7 @@ export function AdminExaminerAccessPanel() {
           secure email link to set their password.
         </p>
         <div className="readiness-list">
-          <span>Mode: {authMode === "supabase" ? "Supabase admin API" : "Local demo auth"}</span>
+          <span>Mode: {authMode === "postgres" ? "Postgres auth API" : "Local demo auth"}</span>
           <span>Master admin: metadata role or configured admin email</span>
           <span>Disabled examiners cannot sign in</span>
         </div>

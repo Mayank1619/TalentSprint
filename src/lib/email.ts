@@ -16,12 +16,27 @@ export type EmailResponse = {
   message: string;
 };
 
+export type RawEmailRequest = {
+  to: string;
+  subject: string;
+  html: string;
+};
+
 const resendEndpoint = "https://api.resend.com/emails";
 
 export async function sendTalentSprintEmail(request: EmailRequest): Promise<EmailResponse> {
+  const subjectAndHtml = buildEmail(request);
+
+  return sendRawTalentSprintEmail({
+    to: request.to,
+    subject: subjectAndHtml.subject,
+    html: subjectAndHtml.html,
+  });
+}
+
+export async function sendRawTalentSprintEmail(request: RawEmailRequest): Promise<EmailResponse> {
   const apiKey = process.env.RESEND_API_KEY;
   const from = process.env.RESEND_FROM_EMAIL ?? "Talent Sprint <onboarding@resend.dev>";
-  const subjectAndHtml = buildEmail(request);
 
   if (!apiKey) {
     return {
@@ -42,8 +57,8 @@ export async function sendTalentSprintEmail(request: EmailRequest): Promise<Emai
     body: JSON.stringify({
       from,
       to: request.to,
-      subject: subjectAndHtml.subject,
-      html: subjectAndHtml.html,
+      subject: request.subject,
+      html: request.html,
     }),
   });
 

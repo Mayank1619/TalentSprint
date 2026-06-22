@@ -45,9 +45,25 @@ The current implementation is a local-first MVP/prototype:
 - Examiner reporting dashboard
 - Admin/question-library overview
 - Mock evaluation service for local testing
+- Better Auth/Postgres production auth path with local browser auth fallback
 
-Real email delivery, persistent database, authentication, and secure code execution are intentionally
-behind provider boundaries and will be plugged in after local workflows are validated.
+Real email delivery and secure code execution are intentionally behind provider boundaries. The app
+can run without a database in local mode, or against Postgres with Better Auth enabled.
+
+## Authentication Configuration
+
+Local demos and tests use browser-only seeded accounts by default. To run the production-style auth
+path, configure:
+
+```bash
+NEXT_PUBLIC_AUTH_MODE=postgres
+DATABASE_URL=postgres://postgres:postgres@localhost:5432/talent_sprint
+BETTER_AUTH_SECRET=change-me-to-a-long-random-secret
+BETTER_AUTH_URL=http://localhost:3000
+NEXT_PUBLIC_SITE_URL=http://localhost:3000
+```
+
+Then apply `db/migrations/0001_better_auth_postgres.sql` to the configured database.
 
 ## Email Configuration
 

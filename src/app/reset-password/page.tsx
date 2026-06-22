@@ -88,7 +88,7 @@ export default function ResetPasswordPage() {
         <aside className="system-card auth-helper">
           <KeyRound />
           <h2>Secure reset</h2>
-          <p>Reset links are managed by Supabase Auth and expire automatically.</p>
+          <p>Reset links are managed by Better Auth and expire automatically.</p>
           <Link className="inline-link" href="/login">
             Back to login
           </Link>

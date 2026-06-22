@@ -16,7 +16,7 @@ export type StoredAccount = DemoUser & {
   disabledAt?: string;
 };
 
-export type AuthMode = "supabase" | "local";
+export type AuthMode = "postgres" | "local";
 export type AccountStatus = "active" | "disabled";
 
 export type RegistrationInput = {

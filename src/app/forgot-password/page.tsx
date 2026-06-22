@@ -51,7 +51,7 @@ export default function ForgotPasswordPage() {
         <aside className="system-card auth-helper">
           <Mail />
           <h2>Check your inbox</h2>
-          <p>The reset link opens the password update page. It only works after Supabase email delivery is configured.</p>
+          <p>The reset link opens the password update page after Resend email delivery is configured.</p>
           <Link className="inline-link" href="/login">
             Back to login
           </Link>

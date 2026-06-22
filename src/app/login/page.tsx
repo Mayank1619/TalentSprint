@@ -8,7 +8,7 @@ import { AuthNotice } from "@/components/auth-notice";
 import type { AuthResult } from "@/components/auth-provider";
 import { useAuth } from "@/components/auth-provider";
 import { roleHomePath, roleLabel } from "@/lib/auth";
-import { getRememberedEmail, getRememberMePreference } from "@/lib/supabase-client";
+import { getRememberedEmail, getRememberMePreference } from "@/lib/auth-preferences";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -241,18 +241,18 @@ export default function LoginPage() {
         <aside className="system-card auth-helper">
           <ServerCog />
           <h2>Authentication provider</h2>
-          {authMode === "supabase" ? (
+          {authMode === "postgres" ? (
             <p>
-              Supabase Auth is active. Candidate registration creates a real auth user, and login
-              sessions are managed by Supabase. Examiner registration is admin-invited.
+              Self-hosted Postgres auth is active. Candidate registration creates a real auth user,
+              sessions are managed by Better Auth, and examiner access is admin-invited.
             </p>
           ) : (
             <>
               <p>
-                Supabase environment variables are not configured in this deployment, so the app is
-                using local development auth for testing.
+                Postgres auth is not enabled in this deployment, so the app is using local
+                development auth for testing.
               </p>
-              <p>Configure Supabase to turn this into production authentication.</p>
+              <p>Set NEXT_PUBLIC_AUTH_MODE=postgres and DATABASE_URL to enable production auth.</p>
             </>
           )}
         </aside>

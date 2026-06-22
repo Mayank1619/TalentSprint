@@ -106,10 +106,10 @@ function AdminPlatformSection() {
       <aside className="system-card">
         <Database />
         <h2>Provider readiness</h2>
-        <p>Supabase, Resend, and Judge0-compatible providers are planned behind interfaces.</p>
+        <p>Postgres auth, Resend, and Judge0-compatible providers are wired behind app interfaces.</p>
         <div className="readiness-list">
           <span>Database schema: designed</span>
-          <span>Auth provider: active when Supabase variables are configured</span>
+          <span>Auth provider: active when Postgres auth variables are configured</span>
           <span>Email provider: active when Resend variables are configured</span>
           <span>Execution sandbox: pending provider</span>
         </div>
@@ -121,7 +121,7 @@ function AdminPlatformSection() {
         <p>Platform-level settings will live here as the prototype grows into production workflows.</p>
         <div className="readiness-list">
           <span>Master admin email is configured through environment variables</span>
-          <span>Examiner invitations use Supabase Auth admin APIs</span>
+          <span>Examiner invitations use Better Auth and Postgres profiles</span>
           <span>Candidate registration remains self-service</span>
         </div>
       </aside>

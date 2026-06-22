@@ -1,13 +1,13 @@
 "use client";
 
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { authClient } from "@/lib/auth-client";
 import {
   type AuthMode,
   authStorageKeys,
   type ExaminerInviteInput,
   normalizeEmail,
   parseAccountStatus,
-  parseRole,
   roleHomePath,
   seededAccounts,
   validateGuestPractice,
@@ -20,7 +20,7 @@ import {
   type RegistrationInput,
   type StoredAccount,
 } from "@/lib/auth";
-import { getSupabaseClient, isSupabaseConfigured, setRememberMePreference } from "@/lib/supabase-client";
+import { isPostgresAuthEnabled, setRememberMePreference } from "@/lib/auth-preferences";
 
 export type AuthResult = {
   ok: boolean;
@@ -53,17 +53,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<DemoUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [accounts, setAccounts] = useState<StoredAccount[]>([]);
-  const authMode: AuthMode = isSupabaseConfigured() ? "supabase" : "local";
+  const authMode: AuthMode = isPostgresAuthEnabled() ? "postgres" : "local";
 
   useEffect(() => {
     let isMounted = true;
-    const supabase = getSupabaseClient();
-    if (supabase) {
-      supabase.auth
-        .getSession()
-        .then(({ data }) => {
+
+    if (authMode === "postgres") {
+      fetchCurrentAuthUser()
+        .then((nextUser) => {
           if (!isMounted) return;
-          setUser(data.session?.user ? mapSupabaseUser(data.session.user) : loadCurrentGuest());
+          setUser(nextUser ?? loadCurrentGuest());
         })
         .catch(() => {
           if (!isMounted) return;
@@ -73,17 +72,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           if (isMounted) setIsLoading(false);
         });
 
-      const {
-        data: { subscription },
-      } = supabase.auth.onAuthStateChange((_event, session) => {
-        if (!isMounted) return;
-        setUser(session?.user ? mapSupabaseUser(session.user) : loadCurrentGuest());
-        setIsLoading(false);
-      });
-
       return () => {
         isMounted = false;
-        subscription.unsubscribe();
       };
     }
 
@@ -103,7 +93,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [authMode]);
 
   const value = useMemo(
     () => ({
@@ -117,20 +107,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         persistRememberedIdentity(rememberMe, normalizedEmail);
         setRememberMePreference(rememberMe, normalizedEmail);
 
-        const supabase = getSupabaseClient();
-        if (supabase) {
-          const { data, error } = await withAuthRequest(() =>
-            supabase.auth.signInWithPassword({
-              email: normalizedEmail,
-              password,
-            }),
-          );
+        if (authMode === "postgres") {
+          const { error } = await authClient.signIn.email({
+            email: normalizedEmail,
+            password,
+            rememberMe,
+          });
 
-          if (error || !data.user) {
-            return { ok: false, message: formatAuthError(error?.message) };
+          if (error) {
+            return { ok: false, message: formatAuthError(error.message) };
           }
 
-          const nextUser = mapSupabaseUser(data.user);
+          const nextUser = await fetchCurrentAuthUser();
+          if (!nextUser) {
+            await authClient.signOut();
+            return { ok: false, message: "Unable to load your Talent Sprint profile." };
+          }
+
           setUser(nextUser);
           return {
             ok: true,
@@ -164,35 +157,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const validationMessage = validateRegistration(input);
         if (validationMessage) return { ok: false, message: validationMessage };
 
-        const supabase = getSupabaseClient();
-        if (supabase) {
+        if (authMode === "postgres") {
           const email = normalizeEmail(input.email);
-          const { data, error } = await withAuthRequest(() =>
-            supabase.auth.signUp({
-              email,
-              password: input.password,
-              options: {
-                emailRedirectTo: getAuthRedirectUrl("/login"),
-                data: {
-                  name: input.name.trim(),
-                  role: "candidate",
-                },
-              },
-            }),
-          );
+          const { error } = await authClient.signUp.email({
+            name: input.name.trim(),
+            email,
+            password: input.password,
+          });
 
-          if (error || !data.user) {
-            return { ok: false, message: error?.message ?? "Unable to create account." };
+          if (error) return { ok: false, message: error.message ?? "Unable to create account." };
+
+          const nextUser = await fetchCurrentAuthUser();
+          if (!nextUser) {
+            return {
+              ok: true,
+              message: "Candidate account created. Check your email before logging in.",
+            };
           }
 
-          const nextUser = mapSupabaseUser(data.user);
-          setUser(data.session ? nextUser : null);
+          setUser(nextUser);
           return {
             ok: true,
-            message: data.session
-              ? "Candidate account created."
-              : "Candidate account created. Check your email to confirm before logging in.",
-            redirectTo: data.session ? roleHomePath(nextUser.role) : undefined,
+            message: "Candidate account created.",
+            redirectTo: roleHomePath(nextUser.role),
           };
         }
 
@@ -228,25 +215,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           return { ok: false, message: "Enter a valid email address." };
         }
 
-        const supabase = getSupabaseClient();
-        if (!supabase) {
+        if (authMode === "postgres") {
+          const { error } = await authClient.requestPasswordReset({
+            email: normalizedEmail,
+            redirectTo: getAuthRedirectUrl("/reset-password"),
+          });
+
+          if (error) return { ok: false, message: error.message ?? "Unable to send password reset link." };
           return {
             ok: true,
-            message: "Password reset email would be sent in production auth mode.",
+            message: "If this account exists, Talent Sprint will send a reset link.",
           };
         }
 
-        const { error } = await withAuthRequest(() =>
-          supabase.auth.resetPasswordForEmail(normalizedEmail, {
-            redirectTo: getAuthRedirectUrl("/reset-password"),
-          }),
-        );
-
-        if (error) return { ok: false, message: error.message };
         return {
           ok: true,
-          message:
-            "If this account exists, Supabase will send a reset link. Check inbox and spam, and use the latest email link.",
+          message: "Password reset email would be sent in production auth mode.",
         };
       },
       updatePassword: async (password: string, confirmPassword: string) => {
@@ -256,15 +240,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
         if (password !== confirmPassword) return { ok: false, message: "Passwords do not match." };
 
-        const supabase = getSupabaseClient();
-        if (!supabase) {
-          return { ok: true, message: "Password would be updated in production auth mode." };
+        if (authMode === "postgres") {
+          const token = new URLSearchParams(window.location.search).get("token");
+          if (!token) {
+            return { ok: false, message: "Open this page from a valid password reset email." };
+          }
+
+          const { error } = await authClient.resetPassword({ newPassword: password, token });
+          if (error) return { ok: false, message: error.message ?? "Unable to update password." };
+
+          return { ok: true, message: "Password updated. You can continue to your workspace." };
         }
 
-        const { data, error } = await withAuthRequest(() => supabase.auth.updateUser({ password }));
-        if (error) return { ok: false, message: error.message };
-        if (data.user) setUser(mapSupabaseUser(data.user));
-        return { ok: true, message: "Password updated. You can continue to your workspace." };
+        return { ok: true, message: "Password would be updated in production auth mode." };
       },
       startGuestPractice: async (input: GuestPracticeInput) => {
         const validationMessage = validateGuestPractice(input);
@@ -290,8 +278,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         };
       },
       listManagedUsers: async () => {
-        const supabase = getSupabaseClient();
-        if (supabase) {
+        if (authMode === "postgres") {
           const result = await adminApiRequest<{ users?: ManagedUser[] }>("/api/admin/examiners", {
             method: "GET",
           });
@@ -303,8 +290,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return nextAccounts.map(mapStoredManagedUser);
       },
       listManagedExaminers: async () => {
-        const supabase = getSupabaseClient();
-        if (supabase) {
+        if (authMode === "postgres") {
           const result = await adminApiRequest<{ examiners?: ManagedExaminer[] }>(
             "/api/admin/examiners",
             { method: "GET" },
@@ -320,8 +306,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const validationMessage = validateExaminerInvite(input);
         if (validationMessage) return { ok: false, message: validationMessage };
 
-        const supabase = getSupabaseClient();
-        if (supabase) {
+        if (authMode === "postgres") {
           return adminApiRequest<AuthResult>("/api/admin/examiners", {
             method: "POST",
             body: JSON.stringify({ action: "invite", name: input.name.trim(), email: normalizeEmail(input.email) }),
@@ -362,8 +347,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const validationMessage = validateExaminerInvite(input);
         if (validationMessage) return { ok: false, message: validationMessage };
 
-        const supabase = getSupabaseClient();
-        if (supabase) {
+        if (authMode === "postgres") {
           return adminApiRequest<AuthResult>("/api/admin/examiners", {
             method: "POST",
             body: JSON.stringify({
@@ -397,8 +381,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return { ok: true, message: "Examiner details updated." };
       },
       setExaminerAccess: async (id: string, enabled: boolean) => {
-        const supabase = getSupabaseClient();
-        if (supabase) {
+        if (authMode === "postgres") {
           return adminApiRequest<AuthResult>("/api/admin/examiners", {
             method: "POST",
             body: JSON.stringify({ action: enabled ? "enable" : "disable", id }),
@@ -420,8 +403,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return { ok: true, message: enabled ? "Examiner access enabled." : "Examiner access disabled." };
       },
       removeExaminer: async (id: string) => {
-        const supabase = getSupabaseClient();
-        if (supabase) {
+        if (authMode === "postgres") {
           return adminApiRequest<AuthResult>("/api/admin/examiners", {
             method: "POST",
             body: JSON.stringify({ action: "remove", id }),
@@ -435,9 +417,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return { ok: true, message: "Examiner access removed." };
       },
       signOut: async () => {
-        const supabase = getSupabaseClient();
-        if (supabase) {
-          await supabase.auth.signOut();
+        if (authMode === "postgres") {
+          await authClient.signOut();
         }
         window.localStorage.removeItem(authStorageKeys.user);
         window.sessionStorage.removeItem(authStorageKeys.user);
@@ -456,6 +437,20 @@ export function useAuth() {
     throw new Error("useAuth must be used inside AuthProvider");
   }
   return context;
+}
+
+async function fetchCurrentAuthUser() {
+  const response = await fetch("/api/auth/me", {
+    credentials: "include",
+    cache: "no-store",
+  });
+
+  const payload = (await response.json()) as { ok: boolean; user?: DemoUser | null; message?: string };
+  if (!response.ok || !payload.ok) {
+    throw new Error(payload.message ?? "Unable to load the current auth session.");
+  }
+
+  return payload.user ?? null;
 }
 
 function loadAccounts() {
@@ -570,51 +565,11 @@ function formatAuthError(message: string | undefined) {
   if (!message) return "Email or password is incorrect.";
 
   const lowerMessage = message.toLowerCase();
-  if (lowerMessage.includes("invalid login credentials")) {
-    return "Email or password is incorrect. If you just registered, confirm your email first or use Forgot password.";
-  }
-  if (lowerMessage.includes("email not confirmed")) {
-    return "Please confirm your email before logging in. Check your inbox and spam folder.";
+  if (lowerMessage.includes("invalid email or password") || lowerMessage.includes("invalid login")) {
+    return "Email or password is incorrect. If you just registered, use Forgot password or contact support.";
   }
 
   return message;
-}
-
-async function withAuthRequest<TResponse extends { data: unknown; error: { message: string } | null }>(
-  request: () => Promise<TResponse>,
-): Promise<TResponse> {
-  try {
-    return await request();
-  } catch (error) {
-    const message = error instanceof Error ? error.message : "Unable to reach Supabase Auth.";
-    return {
-      data: {} as TResponse["data"],
-      error: {
-        message:
-          message === "Failed to fetch"
-            ? "Unable to reach Supabase Auth. Check your internet connection and try again."
-            : message,
-      },
-    } as TResponse;
-  }
-}
-
-function mapSupabaseUser(value: {
-  id: string;
-  email?: string;
-  user_metadata?: Record<string, unknown>;
-}): DemoUser {
-  const metadata = value.user_metadata ?? {};
-  const email = value.email ?? "";
-  const role = isMasterAdminEmail(email) ? "administrator" : parseRole(metadata.role);
-  const fallbackName = email ? email.split("@")[0] : "Talent Sprint User";
-
-  return {
-    id: value.id,
-    name: typeof metadata.name === "string" && metadata.name.trim() ? metadata.name : fallbackName,
-    email,
-    role,
-  };
 }
 
 function isExaminerAccount(account: StoredAccount): account is StoredAccount & { role: "examiner" } {
@@ -646,29 +601,14 @@ function mapStoredManagedUser(account: StoredAccount): ManagedUser {
 }
 
 async function adminApiRequest<TResponse>(path: string, init: RequestInit): Promise<TResponse> {
-  const supabase = getSupabaseClient();
-  const { data } = supabase ? await supabase.auth.getSession() : { data: { session: null } };
   const headers = new Headers(init.headers);
   headers.set("Content-Type", "application/json");
-  if (data.session?.access_token) {
-    headers.set("Authorization", `Bearer ${data.session.access_token}`);
-  }
 
-  const response = await fetch(path, { ...init, headers });
+  const response = await fetch(path, { ...init, headers, credentials: "include" });
   const payload = (await response.json()) as TResponse & { message?: string };
   if (!response.ok) {
     throw new Error(payload.message ?? "Admin request failed.");
   }
 
   return payload;
-}
-
-function isMasterAdminEmail(email: string) {
-  const configuredEmails =
-    process.env.NEXT_PUBLIC_MASTER_ADMIN_EMAIL ?? process.env.NEXT_PUBLIC_ADMIN_EMAIL ?? "admin@talentsprint.dev";
-  return configuredEmails
-    .split(",")
-    .map((value) => normalizeEmail(value))
-    .filter(Boolean)
-    .includes(normalizeEmail(email));
 }

@@ -1,54 +1,52 @@
 # Authentication and Authorization
 
-Talent Sprint is wired for Supabase Auth in production and local browser auth in development/test
-when Supabase environment variables are absent.
+Talent Sprint uses a self-hosted authentication stack for production and a local browser fallback
+for development and Playwright tests.
 
 ## Production Provider
 
-Set these variables locally and in Vercel:
+Production auth is implemented with Better Auth backed by Postgres. Set these variables locally and
+in the deployment environment:
 
 ```text
-NEXT_PUBLIC_SUPABASE_URL=<your Supabase project URL>
-NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=<your Supabase publishable key>
-NEXT_PUBLIC_MASTER_ADMIN_EMAIL=<admin email shown as administrator in the UI>
-MASTER_ADMIN_EMAIL=<server-side admin email allowlist>
-SUPABASE_SERVICE_ROLE_KEY=<server-only Supabase service role key>
+NEXT_PUBLIC_AUTH_MODE=postgres
+DATABASE_URL=postgres://user:password@host:5432/talent_sprint
+BETTER_AUTH_SECRET=<long random secret>
+BETTER_AUTH_URL=https://your-app.example.com
+NEXT_PUBLIC_SITE_URL=https://your-app.example.com
+NEXT_PUBLIC_MASTER_ADMIN_EMAIL=admin@example.com
+MASTER_ADMIN_EMAIL=admin@example.com
+RESEND_API_KEY=<optional, required for real reset emails>
+RESEND_FROM_EMAIL=Talent Sprint <verified-sender@example.com>
 ```
 
-When both values exist:
+When `NEXT_PUBLIC_AUTH_MODE=postgres`:
 
-- Registration calls Supabase `auth.signUp`.
-- Login calls Supabase `auth.signInWithPassword`.
-- Sign out calls Supabase `auth.signOut`.
-- Session state is restored through Supabase `auth.getSession` and `onAuthStateChange`.
+- Candidate registration calls Better Auth email/password sign-up.
+- Login, sign-out, sessions, and password reset are handled by Better Auth.
+- Core auth records live in the Better Auth `user`, `session`, `account`, and `verification` tables.
+- Talent Sprint role and status records live in `talent_profiles`.
+- Examiner creation and access changes run only through server-side admin routes.
+
+Run the checked-in migration before enabling production auth:
+
+```bash
+psql "$DATABASE_URL" -f db/migrations/0001_better_auth_postgres.sql
+```
 
 ## Roles
 
-Candidate registration assigns this user metadata:
+Application roles live in `talent_profiles.role`:
 
-```json
-{
-  "name": "Candidate Name",
-  "role": "candidate"
-}
-```
+- `candidate`: self-registers and can practice or take assigned assessments.
+- `examiner`: created by an administrator and can manage assessment/report workflows.
+- `administrator`: configured by `MASTER_ADMIN_EMAIL` or stored in the profile table.
 
-Examiner and administrator accounts should be created or promoted by an administrator in Supabase by
-setting user metadata:
+Candidate sign-up creates a Better Auth user and the app ensures a matching `talent_profiles` row on
+session load. Users matching `MASTER_ADMIN_EMAIL` are promoted to administrator automatically.
 
-```json
-{
-  "name": "Examiner Name",
-  "role": "examiner"
-}
-```
-
-```json
-{
-  "name": "Admin Name",
-  "role": "administrator"
-}
-```
+Examiner accounts are created from the admin workspace. The admin route creates or reuses a Better
+Auth user, stores the examiner profile, and requests a password setup email.
 
 ## Role Routing
 
@@ -58,7 +56,7 @@ After login:
 - Examiner users go to `/examiner`.
 - Administrator users go to `/admin`.
 
-Navigation is also role-aware:
+Navigation is role-aware:
 
 - Admin is only visible to administrators.
 - Examiner is only visible to examiners and administrators.
@@ -66,8 +64,9 @@ Navigation is also role-aware:
 
 ## Development Fallback
 
-If Supabase variables are not configured, the app falls back to local browser auth so Playwright and
-local demos still run. This fallback should not be used as the production security boundary.
+If `NEXT_PUBLIC_AUTH_MODE` is not set to `postgres`, the app uses local browser auth so local demos
+and automated tests run without a database. This fallback must not be used as the production security
+boundary.
 
 Local/demo seeded accounts:
 
@@ -77,6 +76,5 @@ Examiner: examiner@talentsprint.dev / Password123!
 Admin: admin@talentsprint.dev / Admin@2026!
 ```
 
-For production, create the admin account in Supabase Auth using the configured master admin email,
-then set the password through Supabase's invite or password reset email flow. Do not hardcode a real
-production admin password in the repository.
+For production, create the first administrator by signing up with an email in `MASTER_ADMIN_EMAIL`,
+then set a secure password through the normal password reset flow.
