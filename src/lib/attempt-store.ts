@@ -29,6 +29,23 @@ export function getLatestAttempt(candidateId: string, questionId: string) {
     .sort((a, b) => Date.parse(b.submittedAt) - Date.parse(a.submittedAt))[0];
 }
 
+export function getLatestAssessmentAttempts(candidateId: string) {
+  const latestByQuestion = new Map<string, CandidateAttempt>();
+
+  for (const attempt of listAttempts().filter(
+    (item) => item.candidateId === candidateId && item.mode === "assessment",
+  )) {
+    const previous = latestByQuestion.get(attempt.questionId);
+    if (!previous || Date.parse(attempt.submittedAt) > Date.parse(previous.submittedAt)) {
+      latestByQuestion.set(attempt.questionId, attempt);
+    }
+  }
+
+  return Array.from(latestByQuestion.values()).sort(
+    (a, b) => Date.parse(a.submittedAt) - Date.parse(b.submittedAt),
+  );
+}
+
 export function formatDuration(totalSeconds: number) {
   const minutes = Math.floor(totalSeconds / 60);
   const seconds = totalSeconds % 60;

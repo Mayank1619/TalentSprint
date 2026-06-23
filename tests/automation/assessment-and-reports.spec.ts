@@ -23,7 +23,25 @@ test("candidate starts a timed assessment, switches questions, submits, and open
   await expect(page.getByRole("heading", { name: "Valid Parentheses" })).toBeVisible();
 
   await page.getByRole("button", { name: "Java" }).click();
-  await expect(page.getByLabel("Valid Parentheses Java editor")).toBeVisible();
+  const editor = page.getByLabel("Valid Parentheses Java editor");
+  await expect(editor).toBeVisible();
+  await expect
+    .poll(() =>
+      page.locator(".question-panel").evaluate((element) => {
+        const event = new ClipboardEvent("copy", { bubbles: true, cancelable: true });
+        return element.dispatchEvent(event);
+      }),
+    )
+    .toBe(false);
+  await expect
+    .poll(() =>
+      editor.evaluate((element) => {
+        const event = new ClipboardEvent("paste", { bubbles: true, cancelable: true });
+        return element.dispatchEvent(event);
+      }),
+    )
+    .toBe(false);
+  await expect(page.getByText("Copy, paste, and drag/drop are disabled during assessment attempts.")).toBeVisible();
 
   await page.getByRole("button", { name: "Submit" }).click();
   await expect(page.getByText("Correctness")).toBeVisible();
@@ -33,8 +51,10 @@ test("candidate starts a timed assessment, switches questions, submits, and open
   await page.getByRole("link", { name: "Open candidate report summary" }).click();
   await expect(page).toHaveURL("/candidate/report");
   await expect(page.getByRole("heading", { name: "Your score summary" })).toBeVisible();
-  await expect(page.getByText("Code quality")).toBeVisible();
-  await expect(page.getByText("Complexity score")).toBeVisible();
+  await expect(page.getByText("Total attempt time")).toBeVisible();
+  await expect(page.getByText("Time spent")).toBeVisible();
+  await expect(page.locator(".stat-grid").getByText("Code quality", { exact: true })).toBeVisible();
+  await expect(page.locator(".stat-grid").getByText("Complexity score", { exact: true })).toBeVisible();
   await expect(page.getByText(/Hidden tests and examiner-only diagnostics are protected/)).toBeVisible();
   await expect(page.getByText("def pair_sum")).toHaveCount(0);
 });

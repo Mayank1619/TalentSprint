@@ -1,6 +1,15 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ClipboardEvent,
+  type DragEvent,
+  type MouseEvent,
+} from "react";
 import Link from "next/link";
 import { CheckCircle2, Clock3, Play, RotateCcw, Send, TimerReset } from "lucide-react";
 import { useAuth } from "@/components/auth-provider";
@@ -47,6 +56,7 @@ export function CodeWorkspace({
   const [result, setResult] = useState<EvaluationResult | null>(null);
   const [submitted, setSubmitted] = useState(false);
   const [deliveryMessages, setDeliveryMessages] = useState<string[]>([]);
+  const [clipboardWarning, setClipboardWarning] = useState<string | null>(null);
   const [secondsLeft, setSecondsLeft] = useState(autoSubmitSeconds ?? null);
   const startedAtRef = useRef(new Date().toISOString());
   const submitRef = useRef<() => Promise<void>>(async () => {});
@@ -157,6 +167,10 @@ export function CodeWorkspace({
   }, [submit]);
 
   useEffect(() => {
+    startedAtRef.current = new Date().toISOString();
+  }, [question.id]);
+
+  useEffect(() => {
     if (autoSubmitSeconds === undefined || submitted) return;
 
     const deadlineMs = Date.now() + autoSubmitSeconds * 1000;
@@ -187,9 +201,21 @@ export function CodeWorkspace({
     setResult(await evaluateCurrentCode());
   }
 
+  function blockAssessmentClipboard(event: ClipboardEvent | DragEvent | MouseEvent) {
+    if (!assessmentMode) return;
+    event.preventDefault();
+    setClipboardWarning("Copy, paste, and drag/drop are disabled during assessment attempts.");
+  }
+
   return (
-    <div className="workspace">
-      <section className="question-panel">
+    <div className={`workspace ${assessmentMode ? "assessment-secure" : ""}`}>
+      <section
+        className="question-panel"
+        onContextMenu={blockAssessmentClipboard}
+        onCopy={blockAssessmentClipboard}
+        onCut={blockAssessmentClipboard}
+        onDragStart={blockAssessmentClipboard}
+      >
         <div className="panel-label">Question</div>
         <h2>{question.title}</h2>
         <p>{question.prompt}</p>
@@ -233,11 +259,17 @@ export function CodeWorkspace({
             </span>
           )}
         </div>
+        {clipboardWarning && <p className="form-message error">{clipboardWarning}</p>}
         <textarea
           aria-label={`${question.title} ${language} editor`}
           className="code-editor"
           disabled={submitted}
+          onContextMenu={blockAssessmentClipboard}
           onChange={(event) => setCode(event.target.value)}
+          onCopy={blockAssessmentClipboard}
+          onCut={blockAssessmentClipboard}
+          onDrop={blockAssessmentClipboard}
+          onPaste={blockAssessmentClipboard}
           spellCheck={false}
           value={code}
         />

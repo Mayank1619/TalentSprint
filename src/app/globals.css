@@ -1023,6 +1023,12 @@ input:focus-visible {
   line-height: 1.7;
 }
 
+.assessment-secure .question-panel,
+.assessment-secure .sample-list {
+  -webkit-user-select: none;
+  user-select: none;
+}
+
 .sample-list {
   display: grid;
   gap: 0.5rem;
@@ -1871,6 +1877,14 @@ input:focus-visible {
 
 .report-question {
   overflow: hidden;
+}
+
+.report-question.compact {
+  padding-bottom: 1rem;
+}
+
+.report-metric-list {
+  padding: 1rem;
 }
 
 .report-question-grid {
