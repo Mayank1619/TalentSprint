@@ -20,7 +20,7 @@ export function getPostgresPool() {
     const connectionString = getDatabaseUrl();
     globalForPool.__talentSprintPool = new Pool({
       connectionString,
-      ssl: shouldUseSsl(connectionString) ? { rejectUnauthorized: false } : undefined,
+      ssl: shouldUseSsl(connectionString) ? true : undefined,
       max: Number(process.env.POSTGRES_POOL_MAX ?? 5),
     });
   }

@@ -19,7 +19,7 @@ if (!databaseUrl) {
 
 const pool = new Pool({
   connectionString: databaseUrl,
-  ssl: shouldUseSsl(databaseUrl) ? { rejectUnauthorized: false } : undefined,
+  ssl: shouldUseSsl(databaseUrl) ? true : undefined,
   max: 1,
 });
 
