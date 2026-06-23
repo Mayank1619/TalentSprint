@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { authClient } from "@/lib/auth-client";
+import { exitFullscreenIfActive } from "@/lib/fullscreen";
 import {
   type AuthMode,
   authStorageKeys,
@@ -417,6 +418,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return { ok: true, message: "Examiner access removed." };
       },
       signOut: async () => {
+        await exitFullscreenIfActive();
         if (authMode === "postgres") {
           await authClient.signOut();
         }

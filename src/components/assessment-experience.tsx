@@ -5,6 +5,7 @@ import { AlertTriangle, Clock3, FileCheck2, LockKeyhole, Mail, Maximize2, Shield
 import { CodeWorkspace } from "@/components/code-workspace";
 import { useAuth } from "@/components/auth-provider";
 import { isEmail, loadAssessmentEmailSettings } from "@/lib/assessment-config-store";
+import { exitFullscreenIfActive } from "@/lib/fullscreen";
 import { assessment, assessmentQuestions } from "@/lib/mock-data";
 import type { EmailKind } from "@/lib/email";
 
@@ -44,7 +45,10 @@ export function AssessmentExperience() {
     }
 
     document.addEventListener("fullscreenchange", handleFullscreenChange);
-    return () => document.removeEventListener("fullscreenchange", handleFullscreenChange);
+    return () => {
+      document.removeEventListener("fullscreenchange", handleFullscreenChange);
+      void exitFullscreenIfActive();
+    };
   }, [started]);
 
   const time = useMemo(() => {
