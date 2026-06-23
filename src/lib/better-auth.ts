@@ -1,11 +1,14 @@
 import { betterAuth } from "better-auth";
+import { PostgresDialect } from "kysely";
 import { getPostgresPool } from "@/lib/postgres";
 import { sendRawTalentSprintEmail } from "@/lib/email";
 
 export const auth = betterAuth({
   baseURL: getAuthBaseUrl(),
   secret: process.env.BETTER_AUTH_SECRET ?? "talent-sprint-local-development-secret-change-me",
-  database: getPostgresPool(),
+  database: new PostgresDialect({
+    pool: getPostgresPool(),
+  }),
   emailAndPassword: {
     enabled: true,
     minPasswordLength: 8,
