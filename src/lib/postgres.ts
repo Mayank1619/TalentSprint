@@ -17,11 +17,17 @@ export function getDatabaseUrl() {
 export function getPostgresPool() {
   const globalForPool = globalThis as GlobalWithPool;
   if (!globalForPool.__talentSprintPool) {
+    const connectionString = getDatabaseUrl();
     globalForPool.__talentSprintPool = new Pool({
-      connectionString: getDatabaseUrl(),
+      connectionString,
+      ssl: shouldUseSsl(connectionString) ? { rejectUnauthorized: false } : undefined,
       max: Number(process.env.POSTGRES_POOL_MAX ?? 5),
     });
   }
 
   return globalForPool.__talentSprintPool;
+}
+
+function shouldUseSsl(connectionString: string) {
+  return !connectionString.includes("localhost") && !connectionString.includes("127.0.0.1");
 }

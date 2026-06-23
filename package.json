@@ -5,6 +5,8 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "vercel-build": "npm run migrate:postgres && npm run build",
+    "migrate:postgres": "node scripts/migrate-postgres.mjs",
     "start": "next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
