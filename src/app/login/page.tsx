@@ -1,20 +1,29 @@
 "use client";
 
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, Suspense, useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Eye, EyeOff, LockKeyhole, ServerCog, UserPlus, UserRoundCheck } from "lucide-react";
-import { AuthNotice } from "@/components/auth-notice";
+import { AuthInfoNotice, AuthNotice } from "@/components/auth-notice";
 import type { AuthResult } from "@/components/auth-provider";
 import { useAuth } from "@/components/auth-provider";
 import { roleHomePath, roleLabel } from "@/lib/auth";
 import { getRememberedEmail, getRememberMePreference } from "@/lib/auth-preferences";
 
 export default function LoginPage() {
+  return (
+    <Suspense fallback={<main className="page-shell auth-page" />}>
+      <LoginPageContent />
+    </Suspense>
+  );
+}
+
+function LoginPageContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { authMode, user, signIn, signOut, registerCandidate } = useAuth();
   const [mode, setMode] = useState<"login" | "register">("login");
-  const [notice, setNotice] = useState<AuthResult | null>(null);
+  const [notice, setNotice] = useState<AuthResult | null>(() => getVerificationNotice(searchParams));
   const [loginEmail, setLoginEmail] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(true);
@@ -162,6 +171,9 @@ export default function LoginPage() {
             </form>
           ) : (
             <form className="auth-form" method="post" onSubmit={handleRegister}>
+              {authMode === "postgres" && (
+                <AuthInfoNotice message="Registration sends an activation email. Click Activate account in that email before logging in." />
+              )}
               <label>
                 Full name
                 <input
@@ -268,4 +280,19 @@ export default function LoginPage() {
       </section>
     </main>
   );
+}
+
+function getVerificationNotice(searchParams: { get(name: string): string | null }): AuthResult | null {
+  if (searchParams.get("verified") === "1") {
+    return { ok: true, message: "Email verified. You can now log in to Talent Sprint." };
+  }
+
+  if (searchParams.get("error")) {
+    return {
+      ok: false,
+      message: "The activation link is invalid or expired. Try logging in again to receive a fresh activation email.",
+    };
+  }
+
+  return null;
 }

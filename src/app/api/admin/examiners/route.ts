@@ -4,6 +4,7 @@ import {
   findAuthUserByEmail,
   getCurrentAuthUser,
   listManagedAuthUsers,
+  markAuthUserEmailVerified,
   removeExaminerAccount,
   setExaminerProfileStatus,
   updateExaminerProfile,
@@ -133,6 +134,7 @@ async function inviteExaminer(payload: Extract<ExaminerAction, { action?: "invit
       })
     ).user;
 
+  await markAuthUserEmailVerified(authUser.id);
   await upsertExaminerProfile({
     id: authUser.id,
     name,

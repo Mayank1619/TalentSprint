@@ -22,7 +22,8 @@ RESEND_FROM_EMAIL=Talent Sprint <verified-sender@example.com>
 
 When `NEXT_PUBLIC_AUTH_MODE=postgres`:
 
-- Candidate registration calls Better Auth email/password sign-up.
+- Candidate registration calls Better Auth email/password sign-up and requires email verification
+  before the candidate can log in.
 - Login, sign-out, sessions, and password reset are handled by Better Auth.
 - Core auth records live in the Better Auth `user`, `session`, `account`, and `verification` tables.
 - Talent Sprint role and status records live in `talent_profiles`.
@@ -43,10 +44,13 @@ Application roles live in `talent_profiles.role`:
 - `administrator`: configured by `MASTER_ADMIN_EMAIL` or stored in the profile table.
 
 Candidate sign-up creates a Better Auth user and the app ensures a matching `talent_profiles` row on
-session load. Users matching `MASTER_ADMIN_EMAIL` are promoted to administrator automatically.
+session load after the candidate clicks the activation link sent by email. Unverified candidates are
+blocked from login; when they try to sign in, Talent Sprint requests a fresh activation email.
+Users matching `MASTER_ADMIN_EMAIL` are promoted to administrator automatically.
 
 Examiner accounts are created from the admin workspace. The admin route creates or reuses a Better
-Auth user, stores the examiner profile, and requests a password setup email.
+Auth user, marks the admin-created email as verified, stores the examiner profile, and requests a
+password setup email.
 
 ## Role Routing
 

@@ -12,6 +12,7 @@ export const auth = betterAuth({
   emailAndPassword: {
     enabled: true,
     minPasswordLength: 8,
+    requireEmailVerification: true,
     sendResetPassword: async ({ user, url }) => {
       await sendRawTalentSprintEmail({
         to: user.email,
@@ -21,6 +22,24 @@ export const auth = betterAuth({
           <p>Use this secure link to choose a new password:</p>
           <p><a href="${url}">Reset password</a></p>
           <p>If you did not request this, you can ignore this email.</p>
+        `,
+      });
+    },
+  },
+  emailVerification: {
+    sendOnSignUp: true,
+    sendOnSignIn: true,
+    autoSignInAfterVerification: true,
+    expiresIn: 60 * 60 * 24,
+    sendVerificationEmail: async ({ user, url }) => {
+      await sendRawTalentSprintEmail({
+        to: user.email,
+        subject: "Activate your Talent Sprint account",
+        html: `
+          <h1>Activate your Talent Sprint account</h1>
+          <p>Thanks for registering with Talent Sprint. Use this secure link to activate your account:</p>
+          <p><a href="${url}">Activate account</a></p>
+          <p>This link expires in 24 hours. If you did not register, you can ignore this email.</p>
         `,
       });
     },

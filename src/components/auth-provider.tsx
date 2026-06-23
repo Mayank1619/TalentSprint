@@ -113,6 +113,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             email: normalizedEmail,
             password,
             rememberMe,
+            callbackURL: getAuthRedirectUrl("/login?verified=1"),
           });
 
           if (error) {
@@ -164,23 +165,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             name: input.name.trim(),
             email,
             password: input.password,
+            callbackURL: getAuthRedirectUrl("/login?verified=1"),
           });
 
           if (error) return { ok: false, message: error.message ?? "Unable to create account." };
-
-          const nextUser = await fetchCurrentAuthUser();
-          if (!nextUser) {
-            return {
-              ok: true,
-              message: "Candidate account created. Check your email before logging in.",
-            };
-          }
-
-          setUser(nextUser);
+          await authClient.signOut().catch(() => undefined);
           return {
             ok: true,
-            message: "Candidate account created.",
-            redirectTo: roleHomePath(nextUser.role),
+            message: `Candidate account created for ${email}. Check your inbox and click Activate account before logging in.`,
           };
         }
 
@@ -567,6 +559,10 @@ function formatAuthError(message: string | undefined) {
   if (!message) return "Email or password is incorrect.";
 
   const lowerMessage = message.toLowerCase();
+  if (lowerMessage.includes("email") && lowerMessage.includes("verified")) {
+    return "Please activate your account from the verification email before logging in. We sent a new activation email if this account exists.";
+  }
+
   if (lowerMessage.includes("invalid email or password") || lowerMessage.includes("invalid login")) {
     return "Email or password is incorrect. If you just registered, use Forgot password or contact support.";
   }

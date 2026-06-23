@@ -172,6 +172,18 @@ export async function updateExaminerProfile(id: string, input: { name: string; e
   return result.rows[0] ? mapProfileRow(result.rows[0], { id, name: input.name, email }) : null;
 }
 
+export async function markAuthUserEmailVerified(id: string) {
+  const pool = getPostgresPool();
+  await pool.query(
+    `
+      update "user"
+      set "emailVerified" = true, "updatedAt" = now()
+      where id = $1
+    `,
+    [id],
+  );
+}
+
 export async function setExaminerProfileStatus(id: string, status: AccountStatus) {
   await ensureProfileTables();
 
